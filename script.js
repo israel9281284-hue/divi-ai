@@ -4,7 +4,7 @@ const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
 
 // Your Divi AI Render API
-const API_URL = "https://divi-ai.onrender.com/api/voice-command";
+const API_URL = "https://divi-ai-2.onrender.com/api/voice-command";
 
 
 // Add a message to the chat
