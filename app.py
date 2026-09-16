@@ -6,7 +6,6 @@ from nebius_client import query_nebius
 app = Flask(__name__)
 CORS(app)
 
-# Root route so visiting the main URL doesn't throw a 404
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -17,17 +16,17 @@ def home():
         "endpoint": "/api/voice-command"
     }), 200
 
-# Primary POST endpoint for voice commands
 @app.route('/api/voice-command', methods=['POST'])
 def voice_command():
     data = request.get_json()
     if not data or 'command' not in data:
-        return jsonify({"error": "Missing 'command' parameter"}), 400
+        return jsonify({"error": "No voice command provided."}), 400
     
     user_command = data['command']
     ai_response = query_nebius(user_command)
     
     return jsonify({
+        "status": "success",
         "input": user_command,
         "response": ai_response
     }), 200
