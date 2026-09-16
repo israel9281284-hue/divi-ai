@@ -1,9 +1,7 @@
-```javascript
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
 
-// Your Divi AI Render API
 const API_URL = "https://divi-ai-2.onrender.com/api/voice-command";
 
 
@@ -89,16 +87,10 @@ async function askDiviAI() {
 }
 
 
-// Send when the button is clicked
 sendButton.addEventListener("click", askDiviAI);
 
-
-// Send when Enter is pressed
 userInput.addEventListener("keydown", function(event) {
-
     if (event.key === "Enter") {
         askDiviAI();
     }
-
 });
-```
