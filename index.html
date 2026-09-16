@@ -1,49 +1,136 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Divi AI</title>
+    <title>Divi AI — Your Intelligent Assistant</title>
 
-    <!-- Connect the design -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+    <div class="background-glow"></div>
+
     <div class="app">
 
-        <header>
-            <h1>Divi AI</h1>
-            <p>Your Personal AI Assistant</p>
-        </header>
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
 
-        <main>
+            <div class="logo">
+                <div class="logo-icon">D</div>
 
-            <!-- Chat messages appear here -->
-            <div id="chatBox" class="chat-box">
-
-                <div class="message ai-message">
-                    Hello! I'm Divi AI. How can I help you?
+                <div>
+                    <h2>Divi AI</h2>
+                    <span>Intelligent Assistant</span>
                 </div>
-
             </div>
 
-            <!-- User input -->
-            <div class="input-area">
+            <button class="new-chat" onclick="location.reload()">
+                + New Chat
+            </button>
 
-                <input
-                    type="text"
-                    id="userInput"
-                    placeholder="Ask Divi AI something..."
-                    autocomplete="off"
-                >
+            <nav>
+                <a href="#" class="active">💬 Chat</a>
+                <a href="#">⚡ Features</a>
+                <a href="#">ℹ️ About Divi AI</a>
+            </nav>
 
-                <button id="sendButton">
-                    Send
-                </button>
+            <div class="sidebar-bottom">
+                <div class="status">
+                    <span class="status-dot"></span>
+                    AI System Ready
+                </div>
+
+                <p>Divi AI v1.0</p>
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN AREA -->
+        <main class="main">
+
+            <!-- HEADER -->
+            <header class="topbar">
+
+                <div>
+                    <h1>Divi AI</h1>
+                    <p>Your intelligent digital assistant</p>
+                </div>
+
+                <div class="online">
+                    <span></span>
+                    Online
+                </div>
+
+            </header>
+
+
+            <!-- CHAT -->
+            <section id="chatBox" class="chat-box">
+
+                <div class="welcome">
+
+                    <div class="welcome-icon">
+                        D
+                    </div>
+
+                    <h2>Hello, I'm Divi AI 👋</h2>
+
+                    <p>
+                        Ask me a question, solve a problem,
+                        or explore an idea.
+                    </p>
+
+                    <div class="suggestions">
+
+                        <button onclick="useSuggestion('Explain artificial intelligence simply')">
+                            Explain AI simply
+                        </button>
+
+                        <button onclick="useSuggestion('Help me with my school work')">
+                            Help with school
+                        </button>
+
+                        <button onclick="useSuggestion('Give me a creative idea')">
+                            Give me an idea
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- INPUT -->
+            <div class="input-container">
+
+                <div class="input-area">
+
+                    <button
+                        class="voice-button"
+                        title="Voice input">
+                        🎤
+                    </button>
+
+                    <input
+                        type="text"
+                        id="userInput"
+                        placeholder="Message Divi AI..."
+                        autocomplete="off">
+
+                    <button id="sendButton" class="send-button">
+                        ➤
+                    </button>
+
+                </div>
+
+                <p class="disclaimer">
+                    Divi AI can make mistakes. Check important information.
+                </p>
 
             </div>
 
@@ -51,9 +138,7 @@
 
     </div>
 
-    <!-- Connect JavaScript -->
-    
-<script src="script.js"></script>
+    <script src="script.js"></script>
+
 </body>
 </html>
-
