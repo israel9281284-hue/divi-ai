@@ -172,3 +172,112 @@ if (voiceButton) {
     });
 
 }
+
+
+// =========================
+// SECTION NAVIGATION
+// =========================
+
+const navLinks = document.querySelectorAll(".nav-link");
+const pageSections = document.querySelectorAll(".page-section");
+
+const pageTitle = document.getElementById("pageTitle");
+const pageSubtitle = document.getElementById("pageSubtitle");
+
+
+navLinks.forEach(function(link) {
+
+    link.addEventListener("click", function(event) {
+
+        event.preventDefault();
+
+        const sectionName =
+            link.getAttribute("data-section");
+
+
+        // Hide all sections
+        pageSections.forEach(function(section) {
+
+            section.classList.remove("active-section");
+
+        });
+
+
+        // Show selected section
+        const selectedSection =
+            document.getElementById(sectionName);
+
+        if (selectedSection) {
+
+            selectedSection.classList.add(
+                "active-section"
+            );
+
+        }
+
+
+        // Update active navigation
+        navLinks.forEach(function(item) {
+
+            item.classList.remove("active");
+
+        });
+
+        link.classList.add("active");
+
+
+        // Change page title
+        if (sectionName === "chat") {
+
+            pageTitle.textContent = "Divi AI";
+
+            pageSubtitle.textContent =
+                "Your intelligent digital assistant";
+
+        }
+
+        else if (sectionName === "features") {
+
+            pageTitle.textContent =
+                "Features";
+
+            pageSubtitle.textContent =
+                "Explore what Divi AI can do";
+
+        }
+
+        else if (sectionName === "about") {
+
+            pageTitle.textContent =
+                "About Me";
+
+            pageSubtitle.textContent =
+                "Meet the creator of Divi AI";
+
+        }
+
+    });
+
+});
+
+
+// =========================
+// NEW CHAT
+// =========================
+
+const newChatButton =
+    document.getElementById("newChatButton");
+
+
+if (newChatButton) {
+
+    newChatButton.addEventListener(
+        "click",
+        function() {
+
+            location.reload();
+
+        }
+    );
+
+}
