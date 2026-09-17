@@ -1,8 +1,13 @@
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
+const voiceButton = document.querySelector(".voice-button");
 
-const API_URL = "https://divi-ai-2.onrender.com/api/voice-command";
+// IMPORTANT:
+// Put your NEW Render URL here.
+// Example:
+// https://your-new-render-service.onrender.com/api/voice-command
+const API_URL = "YOUR_NEW_RENDER_URL/api/voice-command";
 
 
 // Add a message to the chat
@@ -20,31 +25,42 @@ function addMessage(message, type) {
     messageElement.textContent = message;
 
     chatBox.appendChild(messageElement);
-
-    // Automatically scroll to the newest message
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 
-// Send the user's question to Divi AI
+// Use one of the suggestion buttons
+function useSuggestion(text) {
+    userInput.value = text;
+    userInput.focus();
+}
+
+
+// Send message to Divi AI
 async function askDiviAI() {
 
     const command = userInput.value.trim();
 
-    // Don't send an empty message
     if (command === "") {
         return;
+    }
+
+    // Remove welcome screen when first message is sent
+    const welcome = document.querySelector(".welcome");
+
+    if (welcome) {
+        welcome.remove();
     }
 
     // Show user's message
     addMessage(command, "user");
 
-    // Clear input box
+    // Clear input
     userInput.value = "";
 
-    // Disable button while AI is thinking
+    // Disable button
     sendButton.disabled = true;
-    sendButton.textContent = "Thinking...";
+    sendButton.textContent = "...";
 
     try {
 
@@ -66,31 +82,93 @@ async function askDiviAI() {
             throw new Error(data.error || "Server error");
         }
 
-        // Show AI response
-        addMessage(data.response, "ai");
+        addMessage(
+            data.response || "Divi AI did not return a response.",
+            "ai"
+        );
 
     } catch (error) {
 
         console.error("Divi AI Error:", error);
 
         addMessage(
-            "Sorry, I could not connect to Divi AI right now.",
+            "Divi AI is temporarily unavailable. Please try again.",
             "ai"
         );
 
     } finally {
 
-        // Enable button again
         sendButton.disabled = false;
-        sendButton.textContent = "Send";
+        sendButton.textContent = "➤";
     }
 }
 
 
+// Send button
 sendButton.addEventListener("click", askDiviAI);
 
+
+// Press Enter to send
 userInput.addEventListener("keydown", function(event) {
+
     if (event.key === "Enter") {
         askDiviAI();
     }
+
 });
+
+
+// Voice button
+if (voiceButton) {
+
+    voiceButton.addEventListener("click", function() {
+
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+
+            addMessage(
+                "Voice input is not supported by this browser.",
+                "ai"
+            );
+
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        voiceButton.textContent = "🔴";
+
+        recognition.start();
+
+        recognition.onresult = function(event) {
+
+            const text =
+                event.results[0][0].transcript;
+
+            userInput.value = text;
+            userInput.focus();
+        };
+
+        recognition.onerror = function() {
+
+            addMessage(
+                "I couldn't hear that. Please try again.",
+                "ai"
+            );
+        };
+
+        recognition.onend = function() {
+
+            voiceButton.textContent = "🎤";
+        };
+
+    });
+
+}
