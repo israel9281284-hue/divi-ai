@@ -804,3 +804,19 @@ nav a.active {
     }
 
 }
+
+
+.history-title button {
+    border: none;
+    background: transparent;
+    color: #68728a;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 6px;
+}
+
+.history-title button:hover {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.15);
+}
