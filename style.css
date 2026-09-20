@@ -1107,3 +1107,15 @@ nav a.active {
         max-width: 300px;
     }
 }
+
+/* ==========================================
+   SEPARATE HOMEPAGE / DIVI AI APP
+   ========================================== */
+
+.home-page {
+    display: flex;
+}
+
+.app {
+    display: none;
+}
