@@ -1,224 +1,461 @@
+// ==========================================
+// DIVI AI - MAIN JAVASCRIPT
+// ==========================================
+
+const API_URL = "https://divi-ai.onrender.com/api/voice-command";
+
+// Elements
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
 const voiceButton = document.querySelector(".voice-button");
 
-const chatHistory = document.getElementById("chatHistory");
+const newChatButton = document.getElementById("newChatButton");
 const clearHistoryButton = document.getElementById("clearHistoryButton");
+const chatHistory = document.getElementById("chatHistory");
+
+const navLinks = document.querySelectorAll(".nav-link");
+const sections = document.querySelectorAll(".page-section");
 
 
 // ==========================================
-// DIVI AI API
+// AI MODE
 // ==========================================
 
-// PUT YOUR RENDER URL HERE
-    const API_URL = "https://divi-ai.onrender.com/api/voice-command";
+let currentMode = "chat";
+
+const modeButtons = document.querySelectorAll(".mode-button");
+
+modeButtons.forEach(button => {
+    button.addEventListener("click", () => {
+
+        modeButtons.forEach(btn => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        currentMode = button.dataset.mode;
+
+        updateModePlaceholder();
+    });
+});
+
+
+function updateModePlaceholder() {
+
+    if (!userInput) return;
+
+    if (currentMode === "chat") {
+        userInput.placeholder = "Message Divi AI...";
+    }
+
+    if (currentMode === "agent") {
+        userInput.placeholder = "Give Divi AI a task to plan...";
+    }
+
+    if (currentMode === "explain") {
+        userInput.placeholder = "What would you like Divi AI to explain?";
+    }
+}
 
 
 // ==========================================
-// CURRENT CHAT
+// SEND MESSAGE
 // ==========================================
 
-let currentChat = [];
+async function sendMessage() {
+
+    const command = userInput.value.trim();
+
+    if (!command) return;
+
+    addMessage(command, "user");
+
+    userInput.value = "";
+
+    const loadingMessage = addMessage(
+        getModeLoadingMessage(),
+        "ai"
+    );
+
+    try {
+
+        let finalCommand = command;
+
+        // --------------------------------------
+        // AGENT MODE
+        // --------------------------------------
+
+        if (currentMode === "agent") {
+
+            finalCommand = `
+You are Divi AI Agent Mode.
+
+Break the user's task into clear steps.
+
+User task:
+${command}
+
+Provide:
+1. Goal
+2. Step-by-step plan
+3. Important considerations
+4. Expected result
+
+Do not pretend to perform actions you cannot actually perform.
+`;
+        }
+
+        // --------------------------------------
+        // EXPLAIN MODE
+        // --------------------------------------
+
+        if (currentMode === "explain") {
+
+            finalCommand = `
+You are Divi AI Explain Mode.
+
+Explain the following clearly and simply.
+
+User question:
+${command}
+
+Use:
+- Simple language
+- Step-by-step reasoning
+- Examples when useful
+- A short final summary
+
+Do not claim to know information you do not know.
+`;
+        }
+
+        // --------------------------------------
+        // NORMAL CHAT
+        // --------------------------------------
+
+        if (currentMode === "chat") {
+
+            finalCommand = command;
+        }
+
+
+        const response = await fetch(API_URL, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                command: finalCommand
+            })
+
+        });
+
+
+        const data = await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error || "Divi AI could not respond."
+            );
+
+        }
+
+
+        loadingMessage.remove();
+
+
+        const aiResponse =
+            data.response ||
+            data.message ||
+            "I received your message, but I couldn't generate a response.";
+
+
+        addMessage(aiResponse, "ai");
+
+
+        saveMessageToHistory(
+            command,
+            aiResponse,
+            currentMode
+        );
+
+
+    } catch (error) {
+
+        console.error("Divi AI Error:", error);
+
+        loadingMessage.remove();
+
+        addMessage(
+            "Sorry, I could not connect to Divi AI right now.",
+            "ai"
+        );
+
+    }
+}
+
+
+// ==========================================
+// LOADING MESSAGE
+// ==========================================
+
+function getModeLoadingMessage() {
+
+    if (currentMode === "agent") {
+        return "🧠 Divi AI is planning the task...";
+    }
+
+    if (currentMode === "explain") {
+        return "💡 Divi AI is preparing an explanation...";
+    }
+
+    return "Divi AI is thinking...";
+}
 
 
 // ==========================================
 // ADD MESSAGE
 // ==========================================
 
-function addMessage(message, type) {
+function addMessage(text, sender) {
 
-    const messageElement =
-        document.createElement("div");
+    const message = document.createElement("div");
 
-    messageElement.classList.add("message");
+    message.className =
+        sender === "user"
+            ? "message user-message"
+            : "message ai-message";
 
-    if (type === "user") {
 
-        messageElement.classList.add(
-            "user-message"
-        );
+    message.innerHTML = `
+        <div class="message-content">
+            ${escapeHTML(text).replace(/\n/g, "<br>")}
+        </div>
+    `;
 
-    } else {
 
-        messageElement.classList.add(
-            "ai-message"
-        );
-    }
+    chatBox.appendChild(message);
 
-    messageElement.textContent = message;
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    chatBox.appendChild(messageElement);
-
-    chatBox.scrollTop =
-        chatBox.scrollHeight;
+    return message;
 }
 
 
 // ==========================================
-// SAVE CHAT
+// ENTER KEY
 // ==========================================
 
-function saveCurrentChat() {
+if (userInput) {
 
-    if (currentChat.length === 0) {
-        return;
-    }
+    userInput.addEventListener("keydown", function(event) {
 
-    let histories =
-        JSON.parse(
-            localStorage.getItem("diviAIHistory")
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    });
+
+}
+
+
+// ==========================================
+// SEND BUTTON
+// ==========================================
+
+if (sendButton) {
+
+    sendButton.addEventListener(
+        "click",
+        sendMessage
+    );
+
+}
+
+
+// ==========================================
+// SUGGESTIONS
+// ==========================================
+
+function useSuggestion(text) {
+
+    if (!userInput) return;
+
+    userInput.value = text;
+
+    userInput.focus();
+
+}
+
+
+// ==========================================
+// CHAT HISTORY
+// ==========================================
+
+const HISTORY_KEY = "diviAIHistory";
+
+
+function getHistory() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem(HISTORY_KEY)
         ) || [];
 
+    } catch {
 
-    const firstUserMessage =
-        currentChat.find(
-            message => message.type === "user"
-        );
+        return [];
 
+    }
 
-    const title =
-        firstUserMessage
-            ? firstUserMessage.text.substring(0, 35)
-            : "New conversation";
+}
 
 
-    const chat = {
+function saveMessageToHistory(
+    question,
+    answer,
+    mode
+) {
 
-        id: Date.now(),
+    const history = getHistory();
 
-        title: title,
+    history.unshift({
 
-        messages: currentChat,
+        question: question,
+
+        answer: answer,
+
+        mode: mode,
 
         date: new Date().toLocaleString()
 
-    };
+    });
 
 
-    histories.unshift(chat);
-
-
-    // Keep the latest 20 chats
-    histories =
-        histories.slice(0, 20);
-
-
+    // Keep latest 20 conversations
     localStorage.setItem(
-        "diviAIHistory",
-        JSON.stringify(histories)
+        HISTORY_KEY,
+        JSON.stringify(history.slice(0, 20))
     );
 
 
-    loadChatHistory();
+    displayHistory();
+
 }
 
 
-// ==========================================
-// LOAD CHAT HISTORY
-// ==========================================
+function displayHistory() {
 
-function loadChatHistory() {
+    if (!chatHistory) return;
 
-    if (!chatHistory) {
-        return;
-    }
-
-
-    const histories =
-        JSON.parse(
-            localStorage.getItem("diviAIHistory")
-        ) || [];
-
+    const history = getHistory();
 
     chatHistory.innerHTML = "";
 
 
-    if (histories.length === 0) {
+    if (history.length === 0) {
 
         chatHistory.innerHTML =
-            `<p class="no-history">
-                No conversations yet
-            </p>`;
+            `<p class="no-history">No conversations yet</p>`;
 
         return;
+
     }
 
 
-    histories.forEach(function(chat) {
+    history.forEach((item, index) => {
 
-        const item =
+        const button =
             document.createElement("button");
 
-        item.className =
-            "history-item";
+        button.className = "history-item";
 
 
-        item.innerHTML = `
-            <span class="history-icon">💬</span>
+        button.innerHTML = `
+            <span class="history-icon">
+                ${item.mode === "agent"
+                    ? "🧠"
+                    : item.mode === "explain"
+                    ? "💡"
+                    : "💬"}
+            </span>
+
             <span class="history-text">
-                ${escapeHTML(chat.title)}
+                ${escapeHTML(item.question)}
             </span>
         `;
 
 
-        item.addEventListener(
-            "click",
-            function() {
+        button.addEventListener("click", () => {
 
-                openSavedChat(chat.id);
+            openHistory(index);
 
-            }
-        );
+        });
 
 
-        chatHistory.appendChild(item);
+        chatHistory.appendChild(button);
 
     });
+
 }
 
 
 // ==========================================
-// OPEN SAVED CHAT
+// OPEN HISTORY
 // ==========================================
 
-function openSavedChat(id) {
+function openHistory(index) {
 
-    const histories =
-        JSON.parse(
-            localStorage.getItem("diviAIHistory")
-        ) || [];
+    const history = getHistory();
 
+    const item = history[index];
 
-    const chat =
-        histories.find(
-            item => item.id === id
-        );
-
-
-    if (!chat) {
-        return;
-    }
-
-
-    showSection("chat");
+    if (!item) return;
 
 
     chatBox.innerHTML = "";
 
 
-    currentChat =
-        [...chat.messages];
+    addMessage(
+        item.question,
+        "user"
+    );
 
 
-    currentChat.forEach(function(message) {
+    addMessage(
+        item.answer,
+        "ai"
+    );
 
-        addMessage(
-            message.text,
-            message.type
+
+    // Restore mode
+    currentMode = item.mode || "chat";
+
+
+    modeButtons.forEach(button => {
+
+        button.classList.toggle(
+            "active",
+            button.dataset.mode === currentMode
         );
 
     });
+
+
+    updateModePlaceholder();
+
 }
 
 
@@ -230,16 +467,15 @@ if (clearHistoryButton) {
 
     clearHistoryButton.addEventListener(
         "click",
-        function() {
+        () => {
 
-            localStorage.removeItem(
-                "diviAIHistory"
-            );
+            localStorage.removeItem(HISTORY_KEY);
 
-            loadChatHistory();
+            displayHistory();
 
         }
     );
+
 }
 
 
@@ -247,309 +483,129 @@ if (clearHistoryButton) {
 // NEW CHAT
 // ==========================================
 
-const newChatButton =
-    document.getElementById("newChatButton");
-
-
 if (newChatButton) {
 
     newChatButton.addEventListener(
         "click",
-        function() {
-
-            saveCurrentChat();
-
-            currentChat = [];
+        () => {
 
             chatBox.innerHTML = `
                 <div class="welcome">
+                    <div class="welcome-icon">D</div>
 
-                    <div class="welcome-icon">
-                        D
-                    </div>
-
-                    <h2>
-                        Hello, I'm Divi AI 👋
-                    </h2>
+                    <h2>Hello, I'm Divi AI 👋</h2>
 
                     <p>
-                        Your intelligent assistant for
-                        questions, ideas, learning,
-                        and problem solving.
+                        Your intelligent assistant for questions,
+                        ideas, learning, and problem solving.
                     </p>
 
+                    <div class="suggestions">
+
+                        <button onclick="useSuggestion('Explain artificial intelligence simply')">
+                            Explain AI simply
+                        </button>
+
+                        <button onclick="useSuggestion('Help me with my school work')">
+                            Help with school
+                        </button>
+
+                        <button onclick="useSuggestion('Give me a creative idea')">
+                            Give me an idea
+                        </button>
+
+                    </div>
                 </div>
             `;
 
+            currentMode = "chat";
 
-            showSection("chat");
+            modeButtons.forEach(button => {
+
+                button.classList.toggle(
+                    "active",
+                    button.dataset.mode === "chat"
+                );
+
+            });
+
+            updateModePlaceholder();
+
+            userInput.value = "";
 
             userInput.focus();
 
         }
     );
-}
-
-
-// ==========================================
-// SUGGESTIONS
-// ==========================================
-
-function useSuggestion(text) {
-
-    userInput.value = text;
-
-    userInput.focus();
 
 }
-
-
-// ==========================================
-// SEND MESSAGE
-// ==========================================
-
-async function askDiviAI() {
-
-    const command =
-        userInput.value.trim();
-
-
-    if (command === "") {
-        return;
-    }
-
-
-    const welcome =
-        document.querySelector(".welcome");
-
-
-    if (welcome) {
-        welcome.remove();
-    }
-
-
-    addMessage(
-        command,
-        "user"
-    );
-
-
-    currentChat.push({
-
-        type: "user",
-
-        text: command
-
-    });
-
-
-    userInput.value = "";
-
-
-    sendButton.disabled = true;
-
-    sendButton.textContent = "...";
-
-
-    try {
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            command: command
-                        })
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.error ||
-                "Server error"
-            );
-
-        }
-
-
-        const aiResponse =
-            data.response ||
-            "Divi AI did not return a response.";
-
-
-        addMessage(
-            aiResponse,
-            "ai"
-        );
-
-
-        currentChat.push({
-
-            type: "ai",
-
-            text: aiResponse
-
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Divi AI Error:",
-            error
-        );
-
-
-        const errorMessage =
-            "Divi AI is temporarily unavailable. Please try again.";
-
-
-        addMessage(
-            errorMessage,
-            "ai"
-        );
-
-
-        currentChat.push({
-
-            type: "ai",
-
-            text: errorMessage
-
-        });
-
-    } finally {
-
-        sendButton.disabled = false;
-
-        sendButton.textContent = "➤";
-
-    }
-}
-
-
-// ==========================================
-// SEND BUTTON
-// ==========================================
-
-sendButton.addEventListener(
-    "click",
-    askDiviAI
-);
-
-
-// ==========================================
-// ENTER KEY
-// ==========================================
-
-userInput.addEventListener(
-    "keydown",
-    function(event) {
-
-        if (event.key === "Enter") {
-
-            askDiviAI();
-
-        }
-
-    }
-);
 
 
 // ==========================================
 // VOICE INPUT
 // ==========================================
 
-if (voiceButton) {
+if (
+    voiceButton &&
+    (
+        "webkitSpeechRecognition" in window ||
+        "SpeechRecognition" in window
+    )
+) {
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+
+    const recognition =
+        new SpeechRecognition();
+
+
+    recognition.lang = "en-US";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = false;
+
 
     voiceButton.addEventListener(
         "click",
-        function() {
-
-            const SpeechRecognition =
-                window.SpeechRecognition ||
-                window.webkitSpeechRecognition;
-
-
-            if (!SpeechRecognition) {
-
-                addMessage(
-                    "Voice input is not supported by this browser.",
-                    "ai"
-                );
-
-                return;
-            }
-
-
-            const recognition =
-                new SpeechRecognition();
-
-
-            recognition.lang =
-                "en-US";
-
-            recognition.interimResults =
-                false;
-
-
-            voiceButton.textContent =
-                "🔴";
-
+        () => {
 
             recognition.start();
 
-
-            recognition.onresult =
-                function(event) {
-
-                    const text =
-                        event.results[0][0]
-                            .transcript;
-
-                    userInput.value =
-                        text;
-
-                    userInput.focus();
-
-                };
-
-
-            recognition.onerror =
-                function() {
-
-                    addMessage(
-                        "I couldn't hear that. Please try again.",
-                        "ai"
-                    );
-
-                };
-
-
-            recognition.onend =
-                function() {
-
-                    voiceButton.textContent =
-                        "🎤";
-
-                };
+            voiceButton.textContent = "🔴";
 
         }
     );
+
+
+    recognition.onresult = event => {
+
+        const transcript =
+            event.results[0][0].transcript;
+
+        userInput.value = transcript;
+
+        voiceButton.textContent = "🎤";
+
+    };
+
+
+    recognition.onerror = () => {
+
+        voiceButton.textContent = "🎤";
+
+    };
+
+
+    recognition.onend = () => {
+
+        voiceButton.textContent = "🎤";
+
+    };
+
 }
 
 
@@ -557,140 +613,105 @@ if (voiceButton) {
 // NAVIGATION
 // ==========================================
 
-const navLinks =
-    document.querySelectorAll(
-        ".nav-link"
-    );
+navLinks.forEach(link => {
+
+    link.addEventListener("click", event => {
+
+        event.preventDefault();
+
+        const sectionName =
+            link.dataset.section;
 
 
-const pageSections =
-    document.querySelectorAll(
-        ".page-section"
-    );
+        navLinks.forEach(item => {
+
+            item.classList.remove("active");
+
+        });
 
 
-const pageTitle =
-    document.getElementById(
-        "pageTitle"
-    );
+        link.classList.add("active");
 
 
-const pageSubtitle =
-    document.getElementById(
-        "pageSubtitle"
-    );
-
-
-function showSection(sectionName) {
-
-    pageSections.forEach(
-        function(section) {
+        sections.forEach(section => {
 
             section.classList.remove(
                 "active-section"
             );
 
-        }
-    );
+        });
 
 
-    const selectedSection =
-        document.getElementById(
-            sectionName
-        );
+        const target =
+            document.getElementById(sectionName);
 
 
-    if (selectedSection) {
+        if (target) {
 
-        selectedSection.classList.add(
-            "active-section"
-        );
-
-    }
-
-
-    navLinks.forEach(
-        function(link) {
-
-            link.classList.remove(
-                "active"
+            target.classList.add(
+                "active-section"
             );
 
         }
-    );
 
 
-    const activeLink =
-        document.querySelector(
-            `[data-section="${sectionName}"]`
-        );
+        updatePageTitle(sectionName);
+
+    });
+
+});
 
 
-    if (activeLink) {
+// ==========================================
+// PAGE TITLES
+// ==========================================
 
-        activeLink.classList.add(
-            "active"
-        );
+function updatePageTitle(section) {
 
-    }
+    const title =
+        document.getElementById("pageTitle");
+
+    const subtitle =
+        document.getElementById("pageSubtitle");
 
 
-    if (sectionName === "chat") {
+    if (!title || !subtitle) return;
 
-        pageTitle.textContent =
-            "Divi AI";
 
-        pageSubtitle.textContent =
+    if (section === "chat") {
+
+        title.textContent = "Divi AI";
+
+        subtitle.textContent =
             "Your intelligent digital assistant";
 
     }
 
-    else if (sectionName === "features") {
 
-        pageTitle.textContent =
-            "Features";
+    if (section === "features") {
 
-        pageSubtitle.textContent =
+        title.textContent = "Features";
+
+        subtitle.textContent =
             "Explore what Divi AI can do";
 
     }
 
-    else if (sectionName === "about") {
 
-        pageTitle.textContent =
-            "About Me";
+    if (section === "about") {
 
-        pageSubtitle.textContent =
-            "Meet the creator of Divi AI";
+        title.textContent = "About Me";
+
+        subtitle.textContent =
+            "The creator behind Divi AI";
 
     }
+
 }
 
 
-navLinks.forEach(
-    function(link) {
-
-        link.addEventListener(
-            "click",
-            function(event) {
-
-                event.preventDefault();
-
-                showSection(
-                    link.getAttribute(
-                        "data-section"
-                    )
-                );
-
-            }
-        );
-
-    }
-);
-
-
 // ==========================================
-// ESCAPE HTML
+// SECURITY
 // ==========================================
 
 function escapeHTML(text) {
@@ -701,11 +722,14 @@ function escapeHTML(text) {
     div.textContent = text;
 
     return div.innerHTML;
+
 }
 
 
 // ==========================================
-// LOAD HISTORY ON START
+// LOAD HISTORY
 // ==========================================
 
-loadChatHistory();
+displayHistory();
+
+updateModePlaceholder();
