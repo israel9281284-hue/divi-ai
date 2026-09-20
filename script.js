@@ -733,3 +733,100 @@ function escapeHTML(text) {
 displayHistory();
 
 updateModePlaceholder();
+
+
+// ==========================================
+// HOMEPAGE BUTTONS
+// ==========================================
+
+const homePage = document.getElementById("homePage");
+const startDiviButton = document.getElementById("startDiviButton");
+const exploreFeaturesButton = document.getElementById("exploreFeaturesButton");
+
+
+// START DIVI AI
+if (startDiviButton) {
+
+    startDiviButton.addEventListener("click", () => {
+
+        // Hide homepage
+        if (homePage) {
+            homePage.style.display = "none";
+        }
+
+        // Show main Divi AI application
+        const app = document.querySelector(".app");
+
+        if (app) {
+            app.style.display = "flex";
+        }
+
+        // Open Chat
+        navLinks.forEach(link => {
+            link.classList.toggle(
+                "active",
+                link.dataset.section === "chat"
+            );
+        });
+
+        sections.forEach(section => {
+            section.classList.toggle(
+                "active-section",
+                section.id === "chat"
+            );
+        });
+
+        updatePageTitle("chat");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    });
+
+}
+
+
+// EXPLORE FEATURES
+if (exploreFeaturesButton) {
+
+    exploreFeaturesButton.addEventListener("click", () => {
+
+        // Hide homepage
+        if (homePage) {
+            homePage.style.display = "none";
+        }
+
+        // Show main application
+        const app = document.querySelector(".app");
+
+        if (app) {
+            app.style.display = "flex";
+        }
+
+        // Open Features
+        navLinks.forEach(link => {
+            link.classList.toggle(
+                "active",
+                link.dataset.section === "features"
+            );
+        });
+
+        sections.forEach(section => {
+            section.classList.toggle(
+                "active-section",
+                section.id === "features"
+            );
+        });
+
+        updatePageTitle("features");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    });
+
+}
