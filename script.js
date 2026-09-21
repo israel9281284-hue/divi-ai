@@ -845,3 +845,36 @@ if (homeButton) {
     });
 
 }
+// ==========================================
+// DIVI AI HOME NAVIGATION
+// ==========================================
+
+(function () {
+
+    const homeBtn = document.getElementById("diviHomeButton");
+    const homeScreen = document.getElementById("homePage");
+    const appScreen = document.querySelector(".app");
+
+    if (!homeBtn) return;
+
+    homeBtn.addEventListener("click", function () {
+
+        // Hide the Divi AI application
+        if (appScreen) {
+            appScreen.style.display = "none";
+        }
+
+        // Show the separate homepage
+        if (homeScreen) {
+            homeScreen.style.display = "flex";
+        }
+
+        // Put the page at the top
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    });
+
+})();
