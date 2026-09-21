@@ -831,50 +831,87 @@ if (exploreFeaturesButton) {
 
 }
 // ==========================================
-// HOME BUTTON
+// HOMEPAGE / DIVI AI NAVIGATION
 // ==========================================
 
-const homeButton = document.getElementById("homeButton");
+const homePage = document.getElementById("homePage");
+const diviApp = document.querySelector(".app");
+const startDiviButton = document.getElementById("startDiviButton");
+const exploreFeaturesButton = document.getElementById("exploreFeaturesButton");
+const homeButton = document.getElementById("diviHomeButton");
 
-if (homeButton) {
 
-    homeButton.addEventListener("click", () => {
+// Open the Divi AI application
+function openDiviAI(sectionName = "chat") {
 
-        openHomePage();
+    if (homePage) {
+        homePage.style.display = "none";
+    }
 
+    if (diviApp) {
+        diviApp.style.display = "flex";
+    }
+
+    navLinks.forEach(link => {
+        link.classList.toggle(
+            "active",
+            link.dataset.section === sectionName
+        );
+    });
+
+    sections.forEach(section => {
+        section.classList.toggle(
+            "active-section",
+            section.id === sectionName
+        );
+    });
+
+    updatePageTitle(sectionName);
+
+    window.scrollTo(0, 0);
+}
+
+
+// Return to the separate homepage
+function openHomePage() {
+
+    if (diviApp) {
+        diviApp.style.display = "none";
+    }
+
+    if (homePage) {
+        homePage.style.display = "flex";
+    }
+
+    window.scrollTo(0, 0);
+}
+
+
+// START USING DIVI AI
+if (startDiviButton) {
+
+    startDiviButton.addEventListener("click", function () {
+        openDiviAI("chat");
     });
 
 }
-// ==========================================
-// DIVI AI HOME NAVIGATION
-// ==========================================
 
-(function () {
 
-    const homeBtn = document.getElementById("diviHomeButton");
-    const homeScreen = document.getElementById("homePage");
-    const appScreen = document.querySelector(".app");
+// EXPLORE FEATURES
+if (exploreFeaturesButton) {
 
-    if (!homeBtn) return;
-
-    homeBtn.addEventListener("click", function () {
-
-        // Hide the Divi AI application
-        if (appScreen) {
-            appScreen.style.display = "none";
-        }
-
-        // Show the separate homepage
-        if (homeScreen) {
-            homeScreen.style.display = "flex";
-        }
-
-        // Put the page at the top
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-
+    exploreFeaturesButton.addEventListener("click", function () {
+        openDiviAI("features");
     });
 
-})();
+}
+
+
+// HOME BUTTON
+if (homeButton) {
+
+    homeButton.addEventListener("click", function () {
+        openHomePage();
+    });
+
+}
