@@ -830,3 +830,18 @@ if (exploreFeaturesButton) {
     });
 
 }
+// ==========================================
+// HOME BUTTON
+// ==========================================
+
+const homeButton = document.getElementById("homeButton");
+
+if (homeButton) {
+
+    homeButton.addEventListener("click", () => {
+
+        openHomePage();
+
+    });
+
+}
