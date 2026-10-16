@@ -1,3 +1,4 @@
+import requests
 import os
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
@@ -185,6 +186,68 @@ def voice_command():
 # ==========================================
 # START SERVER
 # ==========================================
+
+# ==========================================
+# TAVILY WEB SEARCH
+# ==========================================
+
+@app.route("/api/web-search", methods=["POST"])
+def web_search():
+
+    if not os.environ.get("TAVILY_API_KEY"):
+        return jsonify({
+            "error": "Tavily API key is not configured."
+        }), 503
+
+    data = request.get_json(silent=True) or {}
+    query = data.get("query", "").strip()
+
+    if not query:
+        return jsonify({
+            "error": "Please enter something to search for."
+        }), 400
+
+    if len(query) > 500:
+        return jsonify({
+            "error": "Your search query is too long."
+        }), 400
+
+    try:
+        result = requests.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": os.environ["TAVILY_API_KEY"],
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 5,
+                "include_answer": True
+            },
+            timeout=30
+        )
+
+        result.raise_for_status()
+        search_data = result.json()
+
+        return jsonify({
+            "status": "success",
+            "query": query,
+            "answer": search_data.get("answer"),
+            "results": [
+                {
+                    "title": item.get("title"),
+                    "url": item.get("url"),
+                    "content": item.get("content")
+                }
+                for item in search_data.get("results", [])
+            ]
+        })
+
+    except requests.RequestException:
+        app.logger.exception("Tavily search request failed")
+
+        return jsonify({
+            "error": "Web search is temporarily unavailable."
+        }), 502
 
 if __name__ == "__main__":
 
