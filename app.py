@@ -193,6 +193,7 @@ def voice_command():
 
 @app.route("/api/web-search", methods=["POST"])
 def web_search():
+    # Tavily search code goes here
 
     if not os.environ.get("TAVILY_API_KEY"):
         return jsonify({
