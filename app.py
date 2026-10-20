@@ -156,9 +156,7 @@ def voice_command():
             "error": "Please log in first"
         }), 401
 
-       data = request.get_json(silent=True) or {}
-    app.logger.warning("DEBUG request data: %r", data)
-    query = data.get("query", "").strip() 
+    data = request.get_json(silent=True) or {}
     user_command = data.get("command", "").strip()
 
     if not user_command:
@@ -216,6 +214,7 @@ def voice_command():
         return jsonify({
             "error": "Web search is temporarily unavailable."
         }), 502
+
 # ==========================================
 # START SERVER
 # ==========================================
@@ -223,18 +222,28 @@ def voice_command():
 # ==========================================
 # TAVILY WEB SEARCH
 # ==========================================
+
 @app.route("/api/web-search", methods=["POST"])
 def web_search():
     data = request.get_json(silent=True) or {}
-    app.logger.warning("DEBUG request data: %r", data)
     query = data.get("query", "").strip()
 
     if not query:
-        return jsonify({"error": "Please enter something to search for."}), 400
+        return jsonify({
+            "error": "Please enter something to search for."
+        }), 400
+
     if len(query) > 500:
         return jsonify({
             "error": "Your search query is too long."
         }), 400
+
+    tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
+
+    if not tavily_api_key:
+        return jsonify({
+            "error": "Web search is not configured yet."
+        }), 503
 
     try:
         result = requests.post(
@@ -271,8 +280,6 @@ def web_search():
         return jsonify({
             "error": "Web search is temporarily unavailable."
         }), 502
-
-
 if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
