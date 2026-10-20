@@ -33,13 +33,22 @@ init_db()
 
 @app.route("/")
 def home():
-    return jsonify({
-        "status": "online",
-        "service": "Divi AI Backend",
-        "model": "NVIDIA Nemotron via Nebius Serverless",
-        "endpoint": "/api/voice-command"
-    })
-
+            return jsonify({
+            "status": "success",
+            "query": query,
+            "answer": (
+                search_data.get("answer")
+                or "Here are the search results I found."
+            ),
+            "results": [
+                {
+                    "title": item.get("title"),
+                    "url": item.get("url"),
+                    "content": item.get("content")
+                }
+                for item in search_data.get("results", [])
+            ]
+        })
 
 # ==========================================
 # REGISTER
