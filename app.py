@@ -234,8 +234,10 @@ def web_search():
         }), 503
 
     data = request.get_json(silent=True) or {}
-    query = data.get("query", "").strip()
 
+app.logger.info("DEBUG request data: %s", data)
+
+query = data.get("query", "").strip()
     if not query:
         return jsonify({
             "error": "Please enter something to search for."
