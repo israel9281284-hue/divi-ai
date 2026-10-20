@@ -3,7 +3,7 @@ import os
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 
-from nebius_client import query_nebius
+
 from auth import (
     init_db,
     create_user,
@@ -151,38 +151,69 @@ def logout():
 
 @app.route("/api/voice-command", methods=["POST"])
 def voice_command():
-
     if not is_logged_in():
         return jsonify({
             "error": "Please log in first"
         }), 401
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    user_command = data.get("command", "").strip()
 
-    if not data or "command" not in data:
+    if not user_command:
         return jsonify({
-            "error": "No command provided"
+            "error": "Please enter a command."
         }), 400
 
-    user_command = data["command"]
+    if len(user_command) > 500:
+        return jsonify({
+            "error": "Your command is too long."
+        }), 400
+
+    tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
+
+    if not tavily_api_key:
+        return jsonify({
+            "error": "Web search is not configured yet."
+        }), 503
 
     try:
+        result = requests.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": tavily_api_key,
+                "query": user_command,
+                "search_depth": "basic",
+                "max_results": 5,
+                "include_answer": True
+            },
+            timeout=30
+        )
 
-        response = query_nebius(user_command)
+        result.raise_for_status()
+        search_data = result.json()
 
         return jsonify({
             "status": "success",
             "input": user_command,
-            "response": response
+            "response": (
+                search_data.get("answer")
+                or "Here are the search results I found."
+            ),
+            "results": [
+                {
+                    "title": item.get("title"),
+                    "url": item.get("url"),
+                    "content": item.get("content")
+                }
+                for item in search_data.get("results", [])
+            ]
         })
 
-    except Exception as e:
-
+    except requests.RequestException:
+        app.logger.exception("Tavily voice search failed")
         return jsonify({
-            "error": str(e)
-        }), 500
-
-
+            "error": "Web search is temporarily unavailable."
+        }), 502
 # ==========================================
 # START SERVER
 # ==========================================
