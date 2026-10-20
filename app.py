@@ -254,6 +254,7 @@ def web_search():
     tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
 
     if not tavily_api_key:
+        app.logger.error("TAVILY_API_KEY is missing.")
         return jsonify({
             "error": "Web search is not configured yet."
         }), 503
@@ -271,13 +272,26 @@ def web_search():
             timeout=30
         )
 
-        result.raise_for_status()
+        if not result.ok:
+            app.logger.error(
+                "Tavily returned HTTP %s: %s",
+                result.status_code,
+                result.text[:500]
+            )
+            return jsonify({
+                "error": "Tavily search failed.",
+                "status_code": result.status_code
+            }), 502
+
         search_data = result.json()
 
         return jsonify({
             "status": "success",
             "query": query,
-            "answer": search_data.get("answer"),
+            "answer": (
+                search_data.get("answer")
+                or "Here are the search results I found."
+            ),
             "results": [
                 {
                     "title": item.get("title"),
