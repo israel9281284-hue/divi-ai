@@ -188,15 +188,19 @@ def voice_command():
             },
             timeout=30
         )
+        if not result.ok:
+            app.logger.error(
+                "Tavily returned HTTP %s: %s",
+                result.status_code,
+                result.text[:500]
+            )
 
-        result.raise_for_status()
+            return jsonify({
+                "error": "Tavily search failed.",
+                "status_code": result.status_code
+            }), 502
+
         search_data = result.json()
-
-        return jsonify({
-            "status": "success",
-            "input": user_command,
-            "response": (
-                search_data.get("answer")
                 or "Here are the search results I found."
             ),
             "results": [
