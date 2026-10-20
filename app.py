@@ -157,6 +157,8 @@ def voice_command():
         }), 401
 
     data = request.get_json(silent=True) or {}
+    app.logger.info("DEBUG request data: %s", data)
+    
     user_command = data.get("command", "").strip()
 
     if not user_command:
