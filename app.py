@@ -225,22 +225,12 @@ def voice_command():
 # ==========================================
 @app.route("/api/web-search", methods=["POST"])
 def web_search():
-    tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
-
-    if not tavily_api_key:
-        return jsonify({
-            "error": "Tavily API key is not configured."
-        }), 503
-
-data = request.get_json(silent=True) or {}
-app.logger.info("DEBUG request data: %s", data)
-query = data.get("query", "").strip()
+    data = request.get_json(silent=True) or {}
+    app.logger.warning("DEBUG request data: %r", data)
+    query = data.get("query", "").strip()
 
     if not query:
-        return jsonify({
-            "error": "Please enter something to search for."
-        }), 400
-
+        return jsonify({"error": "Please enter something to search for."}), 400
     if len(query) > 500:
         return jsonify({
             "error": "Your search query is too long."
