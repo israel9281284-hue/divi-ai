@@ -156,9 +156,9 @@ def voice_command():
             "error": "Please log in first"
         }), 401
 
-    data = request.get_json(silent=True) or {}
-    app.logger.info("DEBUG request data: %s", data)
-    
+       data = request.get_json(silent=True) or {}
+    app.logger.warning("DEBUG request data: %r", data)
+    query = data.get("query", "").strip() 
     user_command = data.get("command", "").strip()
 
     if not user_command:
@@ -232,10 +232,9 @@ def web_search():
             "error": "Tavily API key is not configured."
         }), 503
 
-    data = request.get_json(silent=True) or {}
-    app.logger.info("DEBUG request data: %s", data)
-
-    query = data.get("query", "").strip()
+data = request.get_json(silent=True) or {}
+app.logger.info("DEBUG request data: %s", data)
+query = data.get("query", "").strip()
 
     if not query:
         return jsonify({
