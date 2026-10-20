@@ -33,23 +33,11 @@ init_db()
 
 @app.route("/")
 def home():
-            return jsonify({
-            "status": "success",
-            "query": query,
-            "answer": (
-                search_data.get("answer")
-                or "Here are the search results I found."
-            ),
-            "results": [
-                {
-                    "title": item.get("title"),
-                    "url": item.get("url"),
-                    "content": item.get("content")
-                }
-                for item in search_data.get("results", [])
-            ]
-        })
-
+    return jsonify({
+        "name": "Divi AI Backend",
+        "status": "online",
+        "message": "Welcome to Divi AI!"
+    })
 # ==========================================
 # REGISTER
 # ==========================================
@@ -181,6 +169,7 @@ def voice_command():
     tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
 
     if not tavily_api_key:
+        app.logger.error("TAVILY_API_KEY is missing.")
         return jsonify({
             "error": "Web search is not configured yet."
         }), 503
@@ -197,19 +186,25 @@ def voice_command():
             },
             timeout=30
         )
+
         if not result.ok:
             app.logger.error(
                 "Tavily returned HTTP %s: %s",
                 result.status_code,
                 result.text[:500]
             )
-
             return jsonify({
                 "error": "Tavily search failed.",
                 "status_code": result.status_code
             }), 502
 
         search_data = result.json()
+
+        return jsonify({
+            "status": "success",
+            "command": user_command,
+            "answer": (
+                search_data.get("answer")
                 or "Here are the search results I found."
             ),
             "results": [
@@ -227,7 +222,6 @@ def voice_command():
         return jsonify({
             "error": "Web search is temporarily unavailable."
         }), 502
-
 # ==========================================
 # START SERVER
 # ==========================================
