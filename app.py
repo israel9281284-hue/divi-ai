@@ -195,7 +195,9 @@ def voice_command():
 def web_search():
     # Tavily search code goes here
 
-    if not os.environ.get("TAVILY_API_KEY"):
+   tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
+
+if not tavily_api_key:
         return jsonify({
             "error": "Tavily API key is not configured."
         }), 503
@@ -217,7 +219,7 @@ def web_search():
         result = requests.post(
             "https://api.tavily.com/search",
             json={
-                "api_key": os.environ["TAVILY_API_KEY"],
+                "api_key": tavily_api_key,
                 "query": query,
                 "search_depth": "basic",
                 "max_results": 5,
