@@ -193,11 +193,9 @@ def voice_command():
 
 @app.route("/api/web-search", methods=["POST"])
 def web_search():
-    # Tavily search code goes here
+    tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
 
-   tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
-
-if not tavily_api_key:
+    if not tavily_api_key:
         return jsonify({
             "error": "Tavily API key is not configured."
         }), 503
@@ -247,10 +245,10 @@ if not tavily_api_key:
 
     except requests.RequestException:
         app.logger.exception("Tavily search request failed")
-
         return jsonify({
             "error": "Web search is temporarily unavailable."
         }), 502
+
 
 if __name__ == "__main__":
 
