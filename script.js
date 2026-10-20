@@ -915,3 +915,19 @@ if (homeButton) {
     });
 
 }
+// Header launch button
+const headerLaunchButton = document.getElementById(
+    "headerLaunchButton"
+);
+
+if (headerLaunchButton) {
+    headerLaunchButton.addEventListener("click", () => {
+        const startButton = document.getElementById(
+            "startDiviButton"
+        );
+
+        if (startButton) {
+            startButton.click();
+        }
+    });
+}
