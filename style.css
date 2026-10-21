@@ -1498,3 +1498,31 @@ nav a.active {
     object-fit: contain;
     border-radius: 9px;
 }
+/* HOMEPAGE DS LOGO */
+.site-logo {
+    width: 45px;
+    height: 45px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: linear-gradient(
+        135deg,
+        #172554,
+        #4f46e5,
+        #a855f7,
+        #ef4444
+    );
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.3);
+}
+
+.site-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 9px;
+}
