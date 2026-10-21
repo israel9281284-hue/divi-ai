@@ -46,9 +46,56 @@ let isSending = false;
 let currentMode = "chat";
 let chatInitialized = false;
 
+```javascript
 // ==================================================
 // PAGE NAVIGATION
 // ==================================================
+
+const sitePageIds = [
+    "homeHero",
+    "homeFeatures",
+    "homeAbout",
+    "homeContact"
+];
+
+function showSitePage(pageId, updateAddress = true) {
+    if (!sitePageIds.includes(pageId)) {
+        pageId = "homeHero";
+    }
+
+    sitePageIds.forEach(id => {
+        const section = document.getElementById(id);
+
+        if (section) {
+            section.hidden = id !== pageId;
+        }
+    });
+
+    document.querySelectorAll(".nav-tab").forEach(button => {
+        const active = button.dataset.page === pageId;
+
+        button.classList.toggle("active", active);
+
+        if (active) {
+            button.setAttribute("aria-current", "page");
+        } else {
+            button.removeAttribute("aria-current");
+        }
+    });
+
+    if (updateAddress) {
+        const hashNames = {
+            homeHero: "home",
+            homeFeatures: "features",
+            homeAbout: "about",
+            homeContact: "contact"
+        };
+
+        history.replaceState(null, "", "#" + hashNames[pageId]);
+    }
+
+    window.scrollTo(0, 0);
+}
 
 function openDiviAI() {
     if (homePage) homePage.hidden = true;
@@ -75,13 +122,37 @@ function returnToHome() {
 
     closeMobileSidebar();
 
+    const hashToPage = {
+        "#home": "homeHero",
+        "#features": "homeFeatures",
+        "#about": "homeAbout",
+        "#contact": "homeContact"
+    };
+
+    const requestedPage =
+        hashToPage[window.location.hash.toLowerCase()] || "homeHero";
+
+    showSitePage(requestedPage, false);
+
     window.scrollTo(0, 0);
 }
 
-// Make navigation functions available to HTML buttons.
+document.querySelectorAll(".nav-tab").forEach(button => {
+    button.addEventListener("click", () => {
+        showSitePage(button.dataset.page);
+    });
+});
+
+document.querySelectorAll("[data-open-page]").forEach(button => {
+    button.addEventListener("click", () => {
+        showSitePage(button.dataset.openPage);
+    });
+});
+
 window.openDiviAI = openDiviAI;
 window.returnToHome = returnToHome;
-
+window.showSitePage = showSitePage;
+```
 // ==================================================
 // CONVERSATION STORAGE
 // ==================================================
