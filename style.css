@@ -2209,3 +2209,36 @@ body.chat-app {
     cursor: pointer;
 }
 ```
+/* DIVI AI CONTACT EMAIL */
+
+.contact-email-card {
+    margin: 25px auto;
+    padding: 25px;
+    max-width: 500px;
+    text-align: center;
+    background: rgba(135, 206, 250, 0.12);
+    border: 1px solid rgba(135, 206, 250, 0.4);
+    border-radius: 18px;
+}
+
+.contact-email-card h3 {
+    margin-bottom: 12px;
+    font-size: 24px;
+}
+
+.contact-email-card p {
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.contact-email {
+    display: inline-block;
+    color: #168bd2;
+    font-weight: 600;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.contact-email:hover {
+    text-decoration: underline;
+}
