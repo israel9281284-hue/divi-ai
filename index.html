@@ -1,35 +1,34 @@
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Divi AI — Your Intelligent Assistant</title>
+    <title>Divi AI — Your Intelligent Assistant</title>
 
-<link rel="stylesheet" href="./style.css">
-<meta
-        name="description"
-        content="Meet Divi AI, your intelligent assistant for learning, exploring ideas, and solving problems."
-    >
+    <meta name="description"
+          content="Meet Divi AI, your intelligent assistant for learning, exploring ideas, and finding information.">
 
     <link rel="icon" type="image/png" href="divi-logo.png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
-    <!-- ==================================
-         HOMEPAGE
-    =================================== -->
+    <!-- =========================================
+         MAIN WEBSITE
+    ========================================== -->
+
     <div id="homePage" class="home-page">
 
         <!-- NAVIGATION -->
         <header class="home-navbar">
 
-            <a href="#homePage" class="home-logo" aria-label="Divi AI Home">
+            <a href="#home" class="home-logo" aria-label="Divi AI Home">
                 <div class="home-logo-icon">
-                    <img
-                        src="divi-logo.png"
-                        alt="Divi AI logo"
-                        onerror="this.style.display='none'; this.parentElement.textContent='D';"
-                    >
+                    <img src="divi-logo.png"
+                         alt="Divi AI logo"
+                         onerror="this.style.display='none';this.parentElement.textContent='D';">
                 </div>
 
                 <div>
@@ -39,26 +38,28 @@
             </a>
 
             <nav class="home-nav-links" aria-label="Main navigation">
-    <button class="nav-tab active" data-page="homeHero">Home</button>
-    <button class="nav-tab" data-page="homeFeatures">Features</button>
-    <button class="nav-tab" data-page="homeAbout">About</button>
-    <button class="nav-tab" data-page="homeContact">Contact</button>
-</nav>
-            <button
-                class="open-ai-button"
-                type="button"
-                onclick="openDiviAI()"
-            >
+                <button class="nav-tab active" data-page="homeHero">Home</button>
+                <button class="nav-tab" data-page="homeFeatures">Features</button>
+                <button class="nav-tab" data-page="homeAbout">About</button>
+                <button class="nav-tab" data-page="homeContact">Contact</button>
+            </nav>
+
+            <button class="open-ai-button"
+                    type="button"
+                    onclick="openDiviAI()">
                 Open Divi AI <span>→</span>
             </button>
 
         </header>
 
 
-        <!-- HERO SECTION -->
+        <!-- =====================================
+             HOME VIEW
+        ====================================== -->
+
         <main>
 
-            <section id="homeHero" class="hero-section">
+            <section id="homeHero" class="site-view hero-section">
 
                 <div class="hero-content">
 
@@ -74,23 +75,23 @@
 
                     <p class="hero-description">
                         Meet Divi AI, your digital assistant for learning,
-                        exploring ideas, getting explanations, and finding
-                        helpful information.
+                        exploring ideas, understanding difficult topics,
+                        and finding helpful information.
                     </p>
 
                     <div class="hero-buttons">
 
-                        <button
-                            class="hero-primary-button"
-                            type="button"
-                            onclick="openDiviAI()"
-                        >
+                        <button class="hero-primary-button"
+                                type="button"
+                                onclick="openDiviAI()">
                             Start chatting <span>→</span>
                         </button>
 
-                        <a class="hero-secondary-button" href="#homeFeatures">
+                        <button class="hero-secondary-button"
+                                type="button"
+                                data-open-page="homeFeatures">
                             Explore features
-                        </a>
+                        </button>
 
                     </div>
 
@@ -103,6 +104,7 @@
 
 
                 <!-- DECORATIVE AI CARD -->
+
                 <div class="hero-visual" aria-hidden="true">
 
                     <div class="orbit orbit-one"></div>
@@ -122,10 +124,12 @@
 
                         <div class="hero-ai-card-top">
                             <div class="mini-logo">D</div>
+
                             <div>
                                 <strong>Divi AI</strong>
                                 <span>Your AI Assistant</span>
                             </div>
+
                             <span class="hero-online-dot"></span>
                         </div>
 
@@ -161,8 +165,10 @@
             </section>
 
 
-            <!-- TRUST / INTRODUCTION STRIP -->
+            <!-- INTRODUCTION STRIP -->
+
             <section class="intro-strip">
+
                 <p>ONE ASSISTANT. MANY POSSIBILITIES.</p>
 
                 <div class="intro-items">
@@ -171,13 +177,20 @@
                     <span>✦ Create</span>
                     <span>✦ Understand</span>
                 </div>
+
             </section>
 
 
-            <!-- FEATURES SECTION -->
-            <section id="homeFeatures" class="home-features-section">
+            <!-- =====================================
+                 FEATURES VIEW
+            ====================================== -->
+
+            <section id="homeFeatures"
+                     class="site-view home-features-section"
+                     hidden>
 
                 <div class="section-heading">
+
                     <span class="section-eyebrow">WHAT YOU CAN DO</span>
 
                     <h2>
@@ -186,10 +199,10 @@
                     </h2>
 
                     <p>
-                        Whether you're studying, planning a project,
-                        or exploring something interesting, Divi AI
-                        is here to help you get started.
+                        Discover ways Divi AI can help you learn,
+                        explore ideas, and find information.
                     </p>
+
                 </div>
 
 
@@ -197,47 +210,62 @@
 
                     <article class="feature-card">
                         <div class="feature-icon feature-blue">✧</div>
+
                         <h3>Learn Something New</h3>
+
                         <p>
                             Explore new subjects and understand difficult
                             topics through simple explanations.
                         </p>
+
                         <button type="button" onclick="openDiviAI()">
                             Try it <span>→</span>
                         </button>
                     </article>
 
+
                     <article class="feature-card">
                         <div class="feature-icon feature-purple">▤</div>
+
                         <h3>School Assistance</h3>
+
                         <p>
                             Get help understanding lessons, reviewing
                             concepts, and practising what you learn.
                         </p>
+
                         <button type="button" onclick="openDiviAI()">
                             Try it <span>→</span>
                         </button>
                     </article>
 
+
                     <article class="feature-card">
                         <div class="feature-icon feature-cyan">✦</div>
+
                         <h3>Explore Ideas</h3>
+
                         <p>
                             Brainstorm creative projects, develop ideas,
                             and explore different possibilities.
                         </p>
+
                         <button type="button" onclick="openDiviAI()">
                             Try it <span>→</span>
                         </button>
                     </article>
 
+
                     <article class="feature-card">
                         <div class="feature-icon feature-pink">⌕</div>
-                        <h3>Find Information</h3>
+
+                        <h3>Web Search</h3>
+
                         <p>
-                            Search for information on the web and explore
-                            useful results for your questions.
+                            Explore web search results to discover
+                            useful information about your questions.
                         </p>
+
                         <button type="button" onclick="openDiviAI()">
                             Try it <span>→</span>
                         </button>
@@ -245,13 +273,28 @@
 
                 </div>
 
+
+                <div class="view-action">
+                    <button type="button"
+                            class="hero-primary-button"
+                            onclick="openDiviAI()">
+                        Start using Divi AI →
+                    </button>
+                </div>
+
             </section>
 
 
-            <!-- ABOUT SECTION -->
-            <section id="homeAbout" class="home-about-section">
+            <!-- =====================================
+                 ABOUT VIEW
+            ====================================== -->
+
+            <section id="homeAbout"
+                     class="site-view home-about-section"
+                     hidden>
 
                 <div class="about-visual">
+
                     <div class="about-orb">
                         <div class="about-orb-inner">D</div>
                     </div>
@@ -263,6 +306,7 @@
                     <div class="about-small-card about-small-two">
                         <span>✧</span> Innovation
                     </div>
+
                 </div>
 
 
@@ -278,22 +322,19 @@
                     <p>
                         Divi AI is an AI assistant project designed to make
                         exploring questions and learning new things easier.
-                        Its goal is to provide a simple place where people
-                        can ask questions, discover information, and develop
-                        their ideas.
+                        It provides a place where people can ask questions,
+                        discover information, and develop their ideas.
                     </p>
 
                     <p>
                         The vision is to keep improving Divi AI with useful
-                        tools, a friendly experience, and features that help
-                        people learn and create.
+                        tools and a friendly experience that supports
+                        learning, creativity, and discovery.
                     </p>
 
-                    <button
-                        class="about-button"
-                        type="button"
-                        onclick="openDiviAI()"
-                    >
+                    <button class="about-button"
+                            type="button"
+                            onclick="openDiviAI()">
                         Meet Divi AI <span>→</span>
                     </button>
 
@@ -302,8 +343,13 @@
             </section>
 
 
-            <!-- CONTACT SECTION -->
-            <section id="homeContact" class="home-contact-section">
+            <!-- =====================================
+                 CONTACT VIEW
+            ====================================== -->
+
+            <section id="homeContact"
+                     class="site-view home-contact-section"
+                     hidden>
 
                 <div class="contact-card">
 
@@ -321,11 +367,9 @@
                         or search for information?
                     </p>
 
-                    <button
-                        class="contact-button"
-                        type="button"
-                        onclick="openDiviAI()"
-                    >
+                    <button class="contact-button"
+                            type="button"
+                            onclick="openDiviAI()">
                         Open Divi AI <span>→</span>
                     </button>
 
@@ -337,20 +381,23 @@
 
 
         <!-- FOOTER -->
+
         <footer class="home-footer">
 
-            <a href="#homePage" class="footer-brand">
+            <button type="button"
+                    class="footer-brand"
+                    data-open-page="homeHero">
                 <span class="footer-logo">D</span>
                 <span>DIVI AI</span>
-            </a>
+            </button>
 
             <p>Built for curiosity, learning, and new ideas.</p>
 
             <div class="footer-links">
-                <a href="#homeHero">Home</a>
-                <a href="#homeFeatures">Features</a>
-                <a href="#homeAbout">About</a>
-                <a href="#homeContact">Contact</a>
+                <button type="button" data-open-page="homeHero">Home</button>
+                <button type="button" data-open-page="homeFeatures">Features</button>
+                <button type="button" data-open-page="homeAbout">About</button>
+                <button type="button" data-open-page="homeContact">Contact</button>
             </div>
 
             <p class="copyright">
@@ -362,25 +409,24 @@
     </div>
 
 
-
-    <!-- ==================================
+    <!-- =========================================
          DIVI AI CHAT APPLICATION
-    =================================== -->
+    ========================================== -->
+
     <div id="aiAppScreen" class="chat-app-screen" hidden>
 
         <div class="app">
 
             <!-- SIDEBAR -->
+
             <aside class="sidebar" id="sidebar">
 
                 <div class="logo">
 
                     <div class="logo-icon">
-                        <img
-                            src="divi-logo.png"
-                            alt="Divi AI"
-                            onerror="this.style.display='none'; this.parentElement.textContent='D';"
-                        >
+                        <img src="divi-logo.png"
+                             alt="Divi AI"
+                             onerror="this.style.display='none';this.parentElement.textContent='D';">
                     </div>
 
                     <div class="brand-text">
@@ -391,16 +437,16 @@
                 </div>
 
 
-                <button
-                    class="home-return-button"
-                    type="button"
-                    onclick="returnToHome()"
-                >
+                <button class="home-return-button"
+                        type="button"
+                        onclick="returnToHome()">
                     <span>⌂</span> Back to Home
                 </button>
 
 
-                <button class="new-chat" id="newChatButton" type="button">
+                <button class="new-chat"
+                        id="newChatButton"
+                        type="button">
                     <span>＋</span> New Chat
                 </button>
 
@@ -410,11 +456,9 @@
                     <div class="history-title">
                         <span>YOUR CONVERSATIONS</span>
 
-                        <button
-                            id="clearHistoryButton"
-                            type="button"
-                            title="Clear conversation history"
-                        >
+                        <button id="clearHistoryButton"
+                                type="button"
+                                title="Clear conversation history">
                             Clear
                         </button>
                     </div>
@@ -442,51 +486,44 @@
             </aside>
 
 
+            <!-- CHAT AREA -->
 
-            <!-- MAIN CHAT AREA -->
             <main class="main">
 
                 <header class="topbar">
 
-                    <button
-                        id="sidebarToggle"
-                        class="sidebar-toggle"
-                        type="button"
-                        aria-label="Toggle sidebar"
-                        title="Show or hide conversations"
-                    >
+                    <button id="sidebarToggle"
+                            class="sidebar-toggle"
+                            type="button"
+                            aria-label="Toggle sidebar">
                         ☰
                     </button>
 
-
-                    <button
-                        type="button"
-                        class="chat-home-button"
-                        onclick="returnToHome()"
-                    >
+                    <button type="button"
+                            class="chat-home-button"
+                            onclick="returnToHome()">
                         ⌂ Home
                     </button>
-
 
                     <div class="topbar-title">
                         <h1 id="pageTitle">Divi AI</h1>
                         <p id="pageSubtitle">What would you like to know?</p>
                     </div>
 
-
                     <div class="online">
-                        <span></span>
-                        Online
+                        <span></span> Online
                     </div>
 
                 </header>
 
 
+                <!-- MESSAGES -->
 
-                <!-- CONVERSATION MESSAGES -->
                 <section id="chat" class="page-section active-section">
 
-                    <div id="chatBox" class="chat-box" aria-live="polite">
+                    <div id="chatBox"
+                         class="chat-box"
+                         aria-live="polite">
 
                         <div class="welcome" id="welcomeScreen">
 
@@ -499,41 +536,29 @@
                                 explore an idea, or solve a problem.
                             </p>
 
-
                             <div class="suggestions">
 
-                                <button
-                                    type="button"
-                                    data-suggestion="Explain artificial intelligence in simple words."
-                                >
+                                <button type="button"
+                                        data-suggestion="Explain artificial intelligence in simple words.">
                                     <span>🧠</span>
-
                                     <span>
                                         <strong>Learn something</strong>
                                         <small>Explain AI simply</small>
                                     </span>
                                 </button>
 
-
-                                <button
-                                    type="button"
-                                    data-suggestion="Help me understand my school work."
-                                >
+                                <button type="button"
+                                        data-suggestion="Help me understand my school work.">
                                     <span>📚</span>
-
                                     <span>
                                         <strong>School help</strong>
                                         <small>Understand a subject</small>
                                     </span>
                                 </button>
 
-
-                                <button
-                                    type="button"
-                                    data-suggestion="Give me a creative idea for a project."
-                                >
+                                <button type="button"
+                                        data-suggestion="Give me a creative idea for a project.">
                                     <span>💡</span>
-
                                     <span>
                                         <strong>Explore an idea</strong>
                                         <small>Start something creative</small>
@@ -547,45 +572,35 @@
                     </div>
 
 
+                    <!-- INPUT -->
 
-                    <!-- MESSAGE COMPOSER -->
                     <div class="input-container">
 
                         <form id="chatForm" class="input-area">
 
-                            <button
-                                class="voice-button"
-                                id="voiceButton"
-                                type="button"
-                                title="Use voice input"
-                                aria-label="Use voice input"
-                            >
+                            <button class="voice-button"
+                                    id="voiceButton"
+                                    type="button"
+                                    title="Use voice input"
+                                    aria-label="Use voice input">
                                 🎤
                             </button>
 
+                            <textarea id="userInput"
+                                      rows="1"
+                                      placeholder="Message Divi AI..."
+                                      aria-label="Your message"
+                                      autocomplete="off"
+                                      required></textarea>
 
-                            <textarea
-                                id="userInput"
-                                rows="1"
-                                placeholder="Message Divi AI..."
-                                aria-label="Your message"
-                                autocomplete="off"
-                                required
-                            ></textarea>
-
-
-                            <button
-                                id="sendButton"
-                                class="send-button"
-                                type="submit"
-                                aria-label="Send message"
-                                title="Send message"
-                            >
+                            <button id="sendButton"
+                                    class="send-button"
+                                    type="submit"
+                                    aria-label="Send message">
                                 ➤
                             </button>
 
                         </form>
-
 
                         <p class="disclaimer">
                             Divi AI can make mistakes. Check important information.
@@ -602,42 +617,145 @@
     </div>
 
 
+    <!-- =========================================
+         PAGE NAVIGATION SCRIPT
+    ========================================== -->
 
-    <!-- ==================================
-         PAGE NAVIGATION
-    =================================== -->
     <script>
-        const homePage = document.getElementById("homePage");
-        const aiAppScreen = document.getElementById("aiAppScreen");
+        (() => {
+            "use strict";
 
-        function openDiviAI() {
-            homePage.hidden = true;
-            aiAppScreen.hidden = false;
+            const homePage = document.getElementById("homePage");
+            const aiAppScreen = document.getElementById("aiAppScreen");
 
-            document.body.classList.add("chat-app");
+            const pageIds = [
+                "homeHero",
+                "homeFeatures",
+                "homeAbout",
+                "homeContact"
+            ];
 
-            window.scrollTo({ top: 0, behavior: "instant" });
+            function showSitePage(pageId, updateAddress = true) {
+                if (!pageIds.includes(pageId)) {
+                    pageId = "homeHero";
+                }
 
-            if (typeof window.initializeDiviChat === "function") {
-                window.initializeDiviChat();
+                pageIds.forEach(id => {
+                    const section = document.getElementById(id);
+
+                    if (section) {
+                        section.hidden = id !== pageId;
+                    }
+                });
+
+                document.querySelectorAll(".nav-tab").forEach(button => {
+                    const active = button.dataset.page === pageId;
+
+                    button.classList.toggle("active", active);
+
+                    if (active) {
+                        button.setAttribute("aria-current", "page");
+                    } else {
+                        button.removeAttribute("aria-current");
+                    }
+                });
+
+                if (updateAddress) {
+                    const hashNames = {
+                        homeHero: "home",
+                        homeFeatures: "features",
+                        homeAbout: "about",
+                        homeContact: "contact"
+                    };
+
+                    history.replaceState(
+                        null,
+                        "",
+                        "#" + hashNames[pageId]
+                    );
+                }
+
+                window.scrollTo(0, 0);
             }
-        }
 
-        function returnToHome() {
-            aiAppScreen.hidden = true;
+            function openDiviAI() {
+                if (!homePage || !aiAppScreen) return;
+
+                homePage.hidden = true;
+                aiAppScreen.hidden = false;
+
+                document.body.classList.add("chat-app");
+
+                window.scrollTo(0, 0);
+
+                if (typeof window.initializeDiviChat === "function") {
+                    window.initializeDiviChat();
+                }
+
+                if (typeof window.renderHistory === "function") {
+                    window.renderHistory();
+                }
+            }
+
+            function returnToHome() {
+                if (!homePage || !aiAppScreen) return;
+
+                aiAppScreen.hidden = true;
+                homePage.hidden = false;
+
+                document.body.classList.remove("chat-app");
+
+                const currentHash = window.location.hash.toLowerCase();
+
+                const hashToPage = {
+                    "#features": "homeFeatures",
+                    "#about": "homeAbout",
+                    "#contact": "homeContact",
+                    "#home": "homeHero",
+                    "#homehero": "homeHero"
+                };
+
+                showSitePage(hashToPage[currentHash] || "homeHero", false);
+            }
+
+            document.querySelectorAll(".nav-tab").forEach(button => {
+                button.addEventListener("click", () => {
+                    showSitePage(button.dataset.page);
+                });
+            });
+
+            document.querySelectorAll("[data-open-page]").forEach(button => {
+                button.addEventListener("click", () => {
+                    showSitePage(button.dataset.openPage);
+                });
+            });
+
+            window.openDiviAI = openDiviAI;
+            window.returnToHome = returnToHome;
+            window.showSitePage = showSitePage;
+
+            document.getElementById("copyrightYear").textContent =
+                new Date().getFullYear();
+
+            const initialHash = window.location.hash.toLowerCase();
+
+            const hashToPage = {
+                "#features": "homeFeatures",
+                "#about": "homeAbout",
+                "#contact": "homeContact",
+                "#home": "homeHero",
+                "#homehero": "homeHero"
+            };
+
+            showSitePage(hashToPage[initialHash] || "homeHero", false);
+
             homePage.hidden = false;
-
+            aiAppScreen.hidden = true;
             document.body.classList.remove("chat-app");
-
-            window.scrollTo({ top: 0, behavior: "instant" });
-        }
-
-        document.getElementById("copyrightYear").textContent =
-            new Date().getFullYear();
+        })();
     </script>
 
-    <script src="script.js"></script>
+    <script src="./script.js"></script>
 
 </body>
 </html>
-```
