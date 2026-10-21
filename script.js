@@ -1,71 +1,279 @@
 ```javascript
 // =====================================================
-// DIVI AI — COMPLETE MAIN JAVASCRIPT
+// DIVI AI — FIXED NAVIGATION AND MAIN JAVASCRIPT
+// Matches the new index.html with separate screens.
 // =====================================================
 
-// API ENDPOINTS
+"use strict";
+
+// =====================================================
+// API
+// =====================================================
+
 const SEARCH_API_URL =
     "https://divi-ai.onrender.com/api/web-search";
 
-const VOICE_API_URL =
-    "https://divi-ai.onrender.com/api/voice-command";
+const HISTORY_KEY = "diviAIHistory";
 
 // =====================================================
-// ELEMENTS
+// SCREEN ELEMENTS
 // =====================================================
 
+const homePage = document.getElementById("homePage");
+const homeFeatures = document.getElementById("homeFeatures");
+const homeAbout = document.getElementById("homeAbout");
+const aiAppScreen = document.getElementById("aiAppScreen");
+
+const app = document.querySelector(".app");
+
+// App sections
+const chatSection = document.getElementById("chat");
+const featuresSection = document.getElementById("features");
+const aboutSection = document.getElementById("about");
+
+const appSections = [
+    chatSection,
+    featuresSection,
+    aboutSection
+].filter(Boolean);
+
+// Chat elements
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
-const voiceButton = document.querySelector(".voice-button");
+const voiceButton = document.getElementById("voiceButton");
 
 const newChatButton = document.getElementById("newChatButton");
-const clearHistoryButton =
-    document.getElementById("clearHistoryButton");
-
+const clearHistoryButton = document.getElementById("clearHistoryButton");
 const chatHistory = document.getElementById("chatHistory");
 
-const navLinks = document.querySelectorAll(".nav-link");
-const sections = document.querySelectorAll(".page-section");
+// Navigation elements
+const screenButtons = document.querySelectorAll("[data-screen]");
+const appNavigationButtons = document.querySelectorAll(
+    ".app-navigation [data-section]"
+);
+
+// Homepage buttons
+const startDiviButton = document.getElementById("startDiviButton");
+const headerLaunchButton = document.getElementById("headerLaunchButton");
+const exploreFeaturesButton = document.getElementById("exploreFeaturesButton");
+const homeButton = document.getElementById("diviHomeButton");
+
+// AI mode buttons
 const modeButtons = document.querySelectorAll(".mode-button");
 
-const homePage = document.getElementById("homePage");
-const diviApp = document.querySelector(".app");
+// App title
+const pageTitle = document.getElementById("pageTitle");
+const pageSubtitle = document.getElementById("pageSubtitle");
 
-const startDiviButton =
-    document.getElementById("startDiviButton");
-
-const exploreFeaturesButton =
-    document.getElementById("exploreFeaturesButton");
-
-const homeButton =
-    document.getElementById("diviHomeButton");
-
-const headerLaunchButton =
-    document.getElementById("headerLaunchButton");
-
-const siteNavigationLinks =
-    document.querySelectorAll(".site-navigation a");
-
-const HISTORY_KEY = "diviAIHistory";
+// =====================================================
+// APP STATE
+// =====================================================
 
 let currentMode = "chat";
 let isSending = false;
 
 // =====================================================
-// SAFE LOCAL STORAGE
+// SCREEN NAVIGATION
 // =====================================================
 
-function getHistory() {
-    try {
-        const history = JSON.parse(
-            localStorage.getItem(HISTORY_KEY) || "[]"
-        );
+function hideAllScreens() {
+    [
+        homePage,
+        homeFeatures,
+        homeAbout,
+        aiAppScreen
+    ].forEach(screen => {
+        if (screen) {
+            screen.classList.remove("active-screen");
+            screen.hidden = true;
+            screen.style.display = "none";
+        }
+    });
+}
 
-        return Array.isArray(history) ? history : [];
-    } catch (error) {
-        console.warn("Unable to read saved history.", error);
-        return [];
+function showScreen(screenName) {
+    hideAllScreens();
+
+    let targetScreen = null;
+
+    switch (screenName) {
+        case "homePage":
+            targetScreen = homePage;
+            break;
+
+        case "homeFeatures":
+            targetScreen = homeFeatures;
+            break;
+
+        case "homeAbout":
+            targetScreen = homeAbout;
+            break;
+
+        case "aiAppScreen":
+        case "appChat":
+        case "chat":
+        case "features":
+        case "about":
+            targetScreen = aiAppScreen;
+            break;
+
+        default:
+            targetScreen = homePage;
+    }
+
+    if (!targetScreen) {
+        console.error("Divi AI screen not found:", screenName);
+        return;
+    }
+
+    targetScreen.hidden = false;
+    targetScreen.style.display = "flex";
+    targetScreen.classList.add("active-screen");
+
+    if (targetScreen === aiAppScreen) {
+        if (screenName === "features" || screenName === "about") {
+            showAppSection(screenName);
+        } else {
+            showAppSection("chat");
+        }
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    console.log("Divi AI screen opened:", screenName);
+}
+
+// Open the AI application on a specific tab.
+function openDiviAI(sectionName = "chat") {
+    showScreen(
+        ["chat", "features", "about"].includes(sectionName)
+            ? sectionName
+            : "chat"
+    );
+}
+
+// Return to the homepage.
+function openHomePage() {
+    showScreen("homePage");
+}
+
+// =====================================================
+// ALL data-screen BUTTONS
+// =====================================================
+
+screenButtons.forEach(button => {
+    button.addEventListener("click", event => {
+        event.preventDefault();
+
+        const screenName = button.dataset.screen;
+
+        if (!screenName) return;
+
+        showScreen(screenName);
+    });
+});
+
+// =====================================================
+// HOMEPAGE BUTTONS
+// =====================================================
+
+if (startDiviButton) {
+    startDiviButton.addEventListener("click", () => {
+        openDiviAI("chat");
+    });
+}
+
+if (headerLaunchButton) {
+    headerLaunchButton.addEventListener("click", () => {
+        openDiviAI("chat");
+    });
+}
+
+if (exploreFeaturesButton) {
+    exploreFeaturesButton.addEventListener("click", () => {
+        showScreen("homeFeatures");
+    });
+}
+
+// The app sidebar Home button returns to the homepage.
+if (homeButton) {
+    homeButton.addEventListener("click", openHomePage);
+}
+
+// =====================================================
+// APP SECTION NAVIGATION
+// =====================================================
+
+function showAppSection(sectionName) {
+    const validSections = ["chat", "features", "about"];
+
+    if (!validSections.includes(sectionName)) {
+        sectionName = "chat";
+    }
+
+    appSections.forEach(section => {
+        const active = section.id === sectionName;
+
+        section.classList.toggle("active-section", active);
+        section.hidden = !active;
+        section.style.display = active ? "flex" : "none";
+    });
+
+    appNavigationButtons.forEach(button => {
+        const active = button.dataset.section === sectionName;
+
+        button.classList.toggle("active", active);
+
+        if (active) {
+            button.setAttribute("aria-current", "page");
+        } else {
+            button.removeAttribute("aria-current");
+        }
+    });
+
+    updatePageTitle(sectionName);
+}
+
+// Sidebar Chat, Features, and About Me buttons.
+appNavigationButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        openDiviAI(button.dataset.section);
+    });
+});
+
+// =====================================================
+// APP PAGE TITLES
+// =====================================================
+
+function updatePageTitle(sectionName) {
+    if (!pageTitle || !pageSubtitle) return;
+
+    const details = {
+        chat: {
+            title: "Divi AI",
+            subtitle: "Your intelligent digital assistant"
+        },
+
+        features: {
+            title: "Features",
+            subtitle: "Explore what Divi AI can do"
+        },
+
+        about: {
+            title: "About Me",
+            subtitle: "The creator behind Divi AI"
+        }
+    };
+
+    const page = details[sectionName];
+
+    if (page) {
+        pageTitle.textContent = page.title;
+        pageSubtitle.textContent = page.subtitle;
     }
 }
 
@@ -81,7 +289,7 @@ function setMode(mode) {
     modeButtons.forEach(button => {
         button.classList.toggle(
             "active",
-            (button.dataset.mode || "chat") === currentMode
+            button.dataset.mode === currentMode
         );
     });
 
@@ -90,7 +298,7 @@ function setMode(mode) {
 
 modeButtons.forEach(button => {
     button.addEventListener("click", () => {
-        setMode(button.dataset.mode || "chat");
+        setMode(button.dataset.mode);
     });
 });
 
@@ -110,7 +318,7 @@ function updateModePlaceholder() {
 function getLoadingMessage() {
     const messages = {
         chat: "🔎 Divi AI is searching for information...",
-        agent: "🧠 Divi AI is researching your task...",
+        agent: "🧠 Divi AI is planning your task...",
         explain: "💡 Divi AI is preparing a simple explanation..."
     };
 
@@ -118,7 +326,7 @@ function getLoadingMessage() {
 }
 
 // =====================================================
-// CHAT MESSAGES
+// DISPLAY CHAT MESSAGES
 // =====================================================
 
 function addMessage(text, sender) {
@@ -145,21 +353,17 @@ function addMessage(text, sender) {
 }
 
 // =====================================================
-// SEARCH SOURCES
+// DISPLAY WEB SOURCES
 // =====================================================
 
 function addSearchResults(results) {
     if (!chatBox || !Array.isArray(results)) return;
 
     const container = document.createElement("div");
-
-    container.className =
-        "message ai-message search-results";
+    container.className = "message ai-message search-results";
 
     const heading = document.createElement("h3");
-
     heading.textContent = "🔗 Sources";
-    heading.style.marginBottom = "12px";
 
     container.appendChild(heading);
 
@@ -169,47 +373,30 @@ function addSearchResults(results) {
         try {
             const url = new URL(result.url);
 
-            if (
-                url.protocol !== "https:" &&
-                url.protocol !== "http:"
-            ) {
+            if (!["https:", "http:"].includes(url.protocol)) {
                 return;
             }
 
             const link = document.createElement("a");
 
             link.href = url.href;
-            link.textContent =
-                result.title || url.hostname;
-
             link.target = "_blank";
             link.rel = "noopener noreferrer";
+            link.textContent = result.title || url.hostname;
             link.className = "search-result-link";
-
-            link.style.display = "block";
-            link.style.color = "#a5b4fc";
-            link.style.marginBottom = "8px";
-            link.style.overflowWrap = "anywhere";
 
             container.appendChild(link);
 
             if (result.content) {
-                const description =
-                    document.createElement("p");
-
-                description.className =
-                    "search-result-description";
+                const description = document.createElement("p");
 
                 description.textContent = result.content;
-                description.style.color = "#929bb0";
-                description.style.fontSize = "13px";
-                description.style.lineHeight = "1.6";
-                description.style.marginBottom = "12px";
+                description.className = "search-result-description";
 
                 container.appendChild(description);
             }
         } catch (error) {
-            console.warn("Skipped an invalid search result.");
+            console.warn("Skipped an invalid source URL.");
         }
     });
 
@@ -220,8 +407,228 @@ function addSearchResults(results) {
 }
 
 // =====================================================
-// SAVE CONVERSATION
+// SEND MESSAGE TO THE BACKEND
 // =====================================================
+
+async function sendMessage() {
+    if (!userInput || !chatBox || isSending) return;
+
+    const question = userInput.value.trim();
+
+    if (!question) {
+        userInput.focus();
+        return;
+    }
+
+    addMessage(question, "user");
+    userInput.value = "";
+
+    const loadingMessage = addMessage(
+        getLoadingMessage(),
+        "ai"
+    );
+
+    isSending = true;
+
+    if (sendButton) {
+        sendButton.disabled = true;
+    }
+
+    try {
+        let query = question;
+
+        if (currentMode === "agent") {
+            query =
+                "Help plan this task. Give practical steps, " +
+                "important considerations, and an expected result. " +
+                "Task: " + question;
+        }
+
+        if (currentMode === "explain") {
+            query =
+                "Explain this in simple language. Include examples " +
+                "where useful. Question: " + question;
+        }
+
+        const response = await fetch(SEARCH_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                query: query
+            })
+        });
+
+        let data;
+
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error(
+                "The server returned an invalid response."
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                `Request failed (${response.status}).`
+            );
+        }
+
+        if (loadingMessage) {
+            loadingMessage.remove();
+        }
+
+        const answer =
+            data.answer ||
+            data.response ||
+            data.summary ||
+            "The request completed, but the server did not return an answer.";
+
+        addMessage(answer, "ai");
+
+        if (Array.isArray(data.results)) {
+            addSearchResults(data.results);
+        }
+
+        saveMessageToHistory(question, answer, currentMode);
+
+    } catch (error) {
+        console.error("Divi AI request failed:", error);
+
+        if (loadingMessage) {
+            loadingMessage.remove();
+        }
+
+        addMessage(
+            "Sorry, Divi AI could not complete your request. " +
+            (error.message || "Please try again."),
+            "ai"
+        );
+
+    } finally {
+        isSending = false;
+
+        if (sendButton) {
+            sendButton.disabled = false;
+        }
+
+        userInput.focus();
+    }
+}
+
+if (sendButton) {
+    sendButton.addEventListener("click", sendMessage);
+}
+
+if (userInput) {
+    userInput.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
+// =====================================================
+// SUGGESTED QUESTIONS
+// =====================================================
+
+function useSuggestion(question) {
+    if (!userInput) return;
+
+    userInput.value = question;
+    userInput.focus();
+}
+
+window.useSuggestion = useSuggestion;
+
+document.querySelectorAll(".suggestions button").forEach(button => {
+    button.addEventListener("click", () => {
+        useSuggestion(button.textContent.trim());
+    });
+});
+
+// =====================================================
+// NEW CHAT
+// =====================================================
+
+function showWelcomeMessage() {
+    if (!chatBox) return;
+
+    chatBox.replaceChildren();
+
+    const welcome = document.createElement("div");
+    welcome.className = "welcome";
+
+    const icon = document.createElement("div");
+    icon.className = "welcome-icon";
+    icon.textContent = "D";
+
+    const heading = document.createElement("h2");
+    heading.textContent = "Hello, I'm Divi AI 👋";
+
+    const description = document.createElement("p");
+    description.textContent =
+        "Your assistant for questions, ideas, learning, and problem solving.";
+
+    const suggestions = document.createElement("div");
+    suggestions.className = "suggestions";
+
+    [
+        "Explain artificial intelligence simply",
+        "Help me with my school work",
+        "Give me a creative idea"
+    ].forEach(question => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.textContent = question;
+
+        button.addEventListener("click", () => {
+            useSuggestion(question);
+        });
+
+        suggestions.appendChild(button);
+    });
+
+    welcome.append(icon, heading, description, suggestions);
+    chatBox.appendChild(welcome);
+}
+
+if (newChatButton) {
+    newChatButton.addEventListener("click", () => {
+        setMode("chat");
+        showWelcomeMessage();
+
+        if (userInput) {
+            userInput.value = "";
+            userInput.focus();
+        }
+
+        openDiviAI("chat");
+    });
+}
+
+// =====================================================
+// CHAT HISTORY
+// =====================================================
+
+function getHistory() {
+    try {
+        const history = JSON.parse(
+            localStorage.getItem(HISTORY_KEY) || "[]"
+        );
+
+        return Array.isArray(history) ? history : [];
+    } catch (error) {
+        console.warn("Could not read chat history.", error);
+        return [];
+    }
+}
 
 function saveMessageToHistory(question, answer, mode) {
     const history = getHistory();
@@ -244,242 +651,6 @@ function saveMessageToHistory(question, answer, mode) {
         console.error("Could not save chat history.", error);
     }
 }
-
-// =====================================================
-// SEND MESSAGE
-// =====================================================
-
-async function sendMessage() {
-    if (!userInput || !chatBox || isSending) return;
-
-    const command = userInput.value.trim();
-
-    if (!command) return;
-
-    addMessage(command, "user");
-
-    userInput.value = "";
-
-    const loadingMessage = addMessage(
-        getLoadingMessage(),
-        "ai"
-    );
-
-    isSending = true;
-
-    if (sendButton) {
-        sendButton.disabled = true;
-    }
-
-    try {
-        let query = command;
-
-        if (currentMode === "agent") {
-            query =
-                "Help plan this task. Provide a goal, practical " +
-                "steps, important considerations, and an expected " +
-                "result. Task: " + command;
-        }
-
-        if (currentMode === "explain") {
-            query =
-                "Explain this in simple language. Include examples " +
-                "where useful and finish with a short summary. " +
-                "Question: " + command;
-        }
-
-        const response = await fetch(SEARCH_API_URL, {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                query: query
-            })
-        });
-
-        let data;
-
-        try {
-            data = await response.json();
-        } catch (error) {
-            throw new Error(
-                "The server returned an invalid response. Please try again."
-            );
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.error ||
-                data.message ||
-                "The web search request failed."
-            );
-        }
-
-        if (loadingMessage) {
-            loadingMessage.remove();
-        }
-
-        const answer =
-            data.answer ||
-            data.response ||
-            data.summary ||
-            "The search completed, but no answer was returned.";
-
-        addMessage(answer, "ai");
-
-        if (
-            Array.isArray(data.results) &&
-            data.results.length > 0
-        ) {
-            addSearchResults(data.results);
-        }
-
-        saveMessageToHistory(
-            command,
-            answer,
-            currentMode
-        );
-
-    } catch (error) {
-        console.error("Divi AI search error:", error);
-
-        if (loadingMessage) {
-            loadingMessage.remove();
-        }
-
-        addMessage(
-            "Sorry, Divi AI could not complete your request. " +
-            (error.message || "Please try again."),
-            "ai"
-        );
-
-    } finally {
-        isSending = false;
-
-        if (sendButton) {
-            sendButton.disabled = false;
-        }
-
-        if (userInput) {
-            userInput.focus();
-        }
-    }
-}
-
-// =====================================================
-// SEND BUTTON AND ENTER KEY
-// =====================================================
-
-if (sendButton) {
-    sendButton.addEventListener("click", sendMessage);
-}
-
-if (userInput) {
-    userInput.addEventListener("keydown", event => {
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
-}
-
-// =====================================================
-// SUGGESTED QUESTIONS
-// =====================================================
-
-function useSuggestion(text) {
-    if (!userInput) return;
-
-    userInput.value = text;
-    userInput.focus();
-}
-
-// Support suggestion buttons already present in the HTML.
-document.querySelectorAll(".suggestions button").forEach(button => {
-    button.addEventListener("click", () => {
-        useSuggestion(button.textContent.trim());
-    });
-});
-
-// =====================================================
-// CHAT WELCOME SCREEN
-// =====================================================
-
-function showWelcomeMessage() {
-    if (!chatBox) return;
-
-    chatBox.innerHTML = "";
-
-    const welcome = document.createElement("div");
-    welcome.className = "welcome";
-
-    const icon = document.createElement("div");
-    icon.className = "welcome-icon";
-    icon.textContent = "D";
-
-    const title = document.createElement("h2");
-    title.textContent = "Hello, I'm Divi AI 👋";
-
-    const description = document.createElement("p");
-
-    description.textContent =
-        "Your assistant for questions, ideas, learning, and problem solving.";
-
-    const suggestions = document.createElement("div");
-    suggestions.className = "suggestions";
-
-    const items = [
-        "Explain artificial intelligence simply",
-        "Help me with my school work",
-        "Give me a creative idea"
-    ];
-
-    items.forEach(text => {
-        const button = document.createElement("button");
-
-        button.type = "button";
-        button.textContent = text;
-
-        button.addEventListener("click", () => {
-            useSuggestion(text);
-        });
-
-        suggestions.appendChild(button);
-    });
-
-    welcome.appendChild(icon);
-    welcome.appendChild(title);
-    welcome.appendChild(description);
-    welcome.appendChild(suggestions);
-
-    chatBox.appendChild(welcome);
-}
-
-// =====================================================
-// NEW CHAT
-// =====================================================
-
-if (newChatButton) {
-    newChatButton.addEventListener("click", () => {
-        setMode("chat");
-        showWelcomeMessage();
-
-        if (userInput) {
-            userInput.value = "";
-            userInput.focus();
-        }
-    });
-}
-
-// =====================================================
-// CHAT HISTORY DISPLAY
-// =====================================================
 
 function displayHistory() {
     if (!chatHistory) return;
@@ -505,71 +676,49 @@ function displayHistory() {
         button.className = "history-item";
 
         const icon = document.createElement("span");
-
         icon.className = "history-icon";
 
-        const icons = {
+        icon.textContent = {
             chat: "💬",
             agent: "🧠",
             explain: "💡"
-        };
-
-        icon.textContent = icons[item.mode] || icons.chat;
+        }[item.mode] || "💬";
 
         const label = document.createElement("span");
-
         label.className = "history-text";
-        label.textContent =
-            item.question || "Previous conversation";
+        label.textContent = item.question || "Previous conversation";
 
-        button.appendChild(icon);
-        button.appendChild(label);
+        button.append(icon, label);
 
         button.addEventListener("click", () => {
-            openHistory(index);
+            const saved = getHistory()[index];
+
+            if (!saved) return;
+
+            openDiviAI("chat");
+
+            if (chatBox) {
+                chatBox.replaceChildren();
+                addMessage(saved.question, "user");
+                addMessage(saved.answer, "ai");
+            }
+
+            setMode(saved.mode || "chat");
         });
 
         chatHistory.appendChild(button);
     });
 }
 
-// =====================================================
-// OPEN SAVED CONVERSATION
-// =====================================================
-
-function openHistory(index) {
-    const history = getHistory();
-    const item = history[index];
-
-    if (!item || !chatBox) return;
-
-    openDiviAI("chat");
-
-    chatBox.replaceChildren();
-
-    addMessage(item.question || "", "user");
-    addMessage(item.answer || "", "ai");
-
-    setMode(item.mode || "chat");
-}
-
-// =====================================================
-// CLEAR CHAT HISTORY
-// =====================================================
-
 if (clearHistoryButton) {
     clearHistoryButton.addEventListener("click", () => {
-        const confirmed = window.confirm(
-            "Are you sure you want to clear all saved chat history?"
-        );
-
-        if (!confirmed) return;
+        if (!window.confirm("Clear all saved chat history?")) return;
 
         try {
             localStorage.removeItem(HISTORY_KEY);
             displayHistory();
         } catch (error) {
-            console.error("Could not clear history.", error);
+            console.error("Could not clear chat history.", error);
         }
     });
 }
@@ -595,26 +744,17 @@ if (voiceButton && userInput) {
                 recognition.start();
                 voiceButton.textContent = "🔴";
             } catch (error) {
-                console.warn(
-                    "Voice recognition may already be active."
-                );
+                console.warn("Voice recognition could not start.", error);
             }
         });
 
         recognition.onresult = event => {
-            const transcript =
-                event.results[0][0].transcript;
-
-            userInput.value = transcript;
+            userInput.value = event.results[0][0].transcript;
             userInput.focus();
         };
 
         recognition.onerror = event => {
-            console.error(
-                "Voice recognition error:",
-                event.error
-            );
-
+            console.error("Voice input error:", event.error);
             voiceButton.textContent = "🎤";
         };
 
@@ -626,7 +766,7 @@ if (voiceButton && userInput) {
         voiceButton.addEventListener("click", () => {
             addMessage(
                 "Voice input is not supported in this browser. " +
-                "Try a recent version of Chrome.",
+                "Please try a recent version of Chrome.",
                 "ai"
             );
         });
@@ -634,191 +774,17 @@ if (voiceButton && userInput) {
 }
 
 // =====================================================
-// APP SECTION NAVIGATION
-// =====================================================
-
-function showSection(sectionName) {
-    const validSections = ["chat", "features", "about"];
-
-    if (!validSections.includes(sectionName)) {
-        sectionName = "chat";
-    }
-
-    sections.forEach(section => {
-        section.classList.toggle(
-            "active-section",
-            section.id === sectionName
-        );
-    });
-
-    navLinks.forEach(link => {
-        const isActive =
-            link.dataset.section === sectionName;
-
-        link.classList.toggle("active", isActive);
-
-        if (isActive) {
-            link.setAttribute("aria-current", "page");
-        } else {
-            link.removeAttribute("aria-current");
-        }
-    });
-
-    updatePageTitle(sectionName);
-}
-
-// Sidebar navigation
-navLinks.forEach(link => {
-    link.addEventListener("click", event => {
-        event.preventDefault();
-
-        const sectionName = link.dataset.section;
-
-        if (sectionName) {
-            openDiviAI(sectionName);
-        }
-    });
-});
-
-// =====================================================
-// PAGE TITLES
-// =====================================================
-
-function updatePageTitle(section) {
-    const title = document.getElementById("pageTitle");
-    const subtitle = document.getElementById("pageSubtitle");
-
-    if (!title || !subtitle) return;
-
-    const pageDetails = {
-        chat: {
-            title: "Divi AI",
-            subtitle: "Your intelligent digital assistant"
-        },
-
-        features: {
-            title: "Features",
-            subtitle: "Explore what Divi AI can do"
-        },
-
-        about: {
-            title: "About Me",
-            subtitle: "The creator behind Divi AI"
-        }
-    };
-
-    const details = pageDetails[section];
-
-    if (details) {
-        title.textContent = details.title;
-        subtitle.textContent = details.subtitle;
-    }
-}
-
-// =====================================================
-// OPEN THE DIVI AI APP
-// =====================================================
-
-function openDiviAI(sectionName = "chat") {
-    if (homePage) {
-        homePage.style.display = "none";
-    }
-
-    if (diviApp) {
-        diviApp.style.display = "flex";
-    }
-
-    showSection(sectionName);
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-// =====================================================
-// RETURN TO THE HOMEPAGE
-// =====================================================
-
-function openHomePage() {
-    if (diviApp) {
-        diviApp.style.display = "none";
-    }
-
-    if (homePage) {
-        homePage.style.display = "flex";
-    }
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-// =====================================================
-// HOMEPAGE BUTTONS
-// =====================================================
-
-// Main Launch button: open chat.
-if (startDiviButton) {
-    startDiviButton.addEventListener("click", () => {
-        openDiviAI("chat");
-    });
-}
-
-// Explore Features: open the app's Features tab.
-if (exploreFeaturesButton) {
-    exploreFeaturesButton.addEventListener("click", () => {
-        openDiviAI("features");
-    });
-}
-
-// Header Launch button: open chat.
-if (headerLaunchButton) {
-    headerLaunchButton.addEventListener("click", () => {
-        openDiviAI("chat");
-    });
-}
-
-// Sidebar Home button: return to homepage.
-if (homeButton) {
-    homeButton.addEventListener("click", openHomePage);
-}
-
-// =====================================================
-// HOMEPAGE NAVIGATION LINKS
-// =====================================================
-
-siteNavigationLinks.forEach(link => {
-    link.addEventListener("click", event => {
-        const target = link.getAttribute("href");
-
-        if (target === "#homePage") {
-            event.preventDefault();
-            openHomePage();
-
-        } else if (target === "#homeFeatures") {
-            event.preventDefault();
-            openDiviAI("features");
-
-        } else if (target === "#homeAbout") {
-            event.preventDefault();
-            openDiviAI("about");
-        }
-    });
-});
-
-// =====================================================
 // INITIALIZE
 // =====================================================
 
 displayHistory();
-updateModePlaceholder();
+setMode("chat");
 
-// Start with the chat page selected internally.
-// The app remains hidden until the user launches it.
-showSection("chat");
+// Ensure the app sections start in a consistent state.
+showAppSection("chat");
 
-console.log("Divi AI JavaScript loaded successfully.");
-console.log("Search endpoint:", SEARCH_API_URL);
+// Start on the homepage.
+showScreen("homePage");
+
+console.log("Divi AI loaded successfully.");
 ```
