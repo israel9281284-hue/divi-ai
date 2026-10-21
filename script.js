@@ -77,76 +77,67 @@ let isSending = false;
 // SCREEN NAVIGATION
 // =====================================================
 
+```javascript
 function hideAllScreens() {
-    [
+    const screens = [
         homePage,
         homeFeatures,
         homeAbout,
         aiAppScreen
-    ].forEach(screen => {
-        if (screen) {
-            screen.classList.remove("active-screen");
-            screen.hidden = true;
-            screen.style.display = "none";
-        }
+    ];
+
+    screens.forEach(screen => {
+        if (!screen) return;
+
+        screen.classList.remove("active-screen");
+        screen.hidden = true;
+        screen.style.setProperty("display", "none", "important");
     });
 }
 
 function showScreen(screenName) {
-    hideAllScreens();
+    const screens = {
+        homePage,
+        homeFeatures,
+        homeAbout,
+        aiAppScreen
+    };
 
-    let targetScreen = null;
+    let targetName = screenName;
 
-    switch (screenName) {
-        case "homePage":
-            targetScreen = homePage;
-            break;
-
-        case "homeFeatures":
-            targetScreen = homeFeatures;
-            break;
-
-        case "homeAbout":
-            targetScreen = homeAbout;
-            break;
-
-        case "aiAppScreen":
-        case "appChat":
-        case "chat":
-        case "features":
-        case "about":
-            targetScreen = aiAppScreen;
-            break;
-
-        default:
-            targetScreen = homePage;
+    if (["chat", "features", "about", "appChat"].includes(screenName)) {
+        targetName = "aiAppScreen";
     }
 
-    if (!targetScreen) {
-        console.error("Divi AI screen not found:", screenName);
+    const target = screens[targetName];
+
+    if (!target) {
+        console.error(
+            "Divi AI could not find the screen:",
+            targetName
+        );
         return;
     }
 
-    targetScreen.hidden = false;
-    targetScreen.style.display = "flex";
-    targetScreen.classList.add("active-screen");
+    hideAllScreens();
 
-    if (targetScreen === aiAppScreen) {
-        if (screenName === "features" || screenName === "about") {
-            showAppSection(screenName);
-        } else {
-            showAppSection("chat");
-        }
+    target.hidden = false;
+    target.classList.add("active-screen");
+    target.style.setProperty("display", "flex", "important");
+
+    if (targetName === "aiAppScreen") {
+        const section = ["chat", "features", "about"].includes(screenName)
+            ? screenName
+            : "chat";
+
+        showAppSection(section);
     }
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    window.scrollTo({ top: 0, behavior: "auto" });
 
-    console.log("Divi AI screen opened:", screenName);
+    console.log("Currently open:", targetName);
 }
-
+```
 // Open the AI application on a specific tab.
 function openDiviAI(sectionName = "chat") {
     showScreen(
