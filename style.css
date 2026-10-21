@@ -2168,3 +2168,8 @@ body.chat-app {
         transition-duration: 0.01ms !important;
     }
 }
+```css
+[hidden] {
+    display: none !important;
+}
+```
