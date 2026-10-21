@@ -1,120 +1,109 @@
 ```javascript
 "use strict";
 
-// ========================================
-// DIVI AI — HOMEPAGE NAVIGATION
-// ========================================
-
 (function () {
-    function setupDiviNavigation() {
-        const homePage = document.getElementById("homePage");
-        const aiAppScreen = document.getElementById("aiAppScreen");
+    function initDiviAI() {
+        const home = document.getElementById("homePage");
+        const app = document.getElementById("aiAppScreen");
 
-        if (!homePage || !aiAppScreen) {
-            console.error("Divi AI: Cannot find the homepage or chat screen.");
+        if (!home || !app) {
+            console.error("Divi AI: Check homePage and aiAppScreen IDs.");
             return;
         }
 
-        const pageIds = [
-            "homeHero",
-            "homeFeatures",
-            "homeAbout",
-            "homeContact"
-        ];
+        const pages = ["homeHero", "homeFeatures", "homeAbout", "homeContact"];
 
-        // Show one homepage section at a time.
-        function showHomePage(pageId) {
-            if (!pageIds.includes(pageId)) {
-                pageId = "homeHero";
-            }
+        // Show the selected homepage tab.
+        function showPage(id) {
+            if (!pages.includes(id)) id = "homeHero";
 
-            pageIds.forEach(function (id) {
-                const section = document.getElementById(id);
-
-                if (section) {
-                    section.hidden = id !== pageId;
-                }
+            pages.forEach(function (pageId) {
+                const section = document.getElementById(pageId);
+                if (section) section.hidden = pageId !== id;
             });
 
             document.querySelectorAll(".nav-tab").forEach(function (button) {
-                button.classList.toggle(
-                    "active",
-                    button.dataset.page === pageId
-                );
+                button.classList.toggle("active", button.dataset.page === id);
             });
 
             window.scrollTo(0, 0);
         }
 
-        // Open the AI chat.
+        // Open the chat screen.
         window.openDiviAI = function () {
-            homePage.hidden = true;
-            aiAppScreen.hidden = false;
+            home.hidden = true;
+            home.style.display = "none";
 
-            homePage.style.display = "none";
-            aiAppScreen.style.display = "flex";
+            app.hidden = false;
+            app.style.display = "flex";
 
             document.body.classList.add("chat-app");
-
-            console.log("Divi AI chat opened.");
         };
 
         // Return to the homepage.
         window.returnToHome = function () {
-            aiAppScreen.hidden = true;
-            homePage.hidden = false;
+            app.hidden = true;
+            app.style.display = "none";
 
-            aiAppScreen.style.display = "none";
-            homePage.style.display = "block";
+            home.hidden = false;
+            home.style.display = "block";
 
             document.body.classList.remove("chat-app");
-
-            showHomePage("homeHero");
-
-            console.log("Returned to the Divi AI homepage.");
+            showPage("homeHero");
         };
 
-        // Header tabs.
+        // Connect navigation tabs.
         document.querySelectorAll(".nav-tab").forEach(function (button) {
             button.addEventListener("click", function () {
-                showHomePage(button.dataset.page);
+                showPage(button.dataset.page);
             });
         });
 
-        // Footer buttons and Explore Features.
+        // Connect Explore Features and footer buttons.
         document.querySelectorAll("[data-open-page]").forEach(function (button) {
             button.addEventListener("click", function () {
-                showHomePage(button.dataset.openPage);
+                showPage(button.dataset.openPage);
             });
         });
 
-        // Set the copyright year.
+        // Connect every button that opens the AI chat.
+        document.querySelectorAll(
+            'button[onclick="openDiviAI()"]'
+        ).forEach(function (button) {
+            button.addEventListener("click", window.openDiviAI);
+            button.removeAttribute("onclick");
+        });
+
+        // Connect every button that returns home.
+        document.querySelectorAll(
+            'button[onclick="returnToHome()"]'
+        ).forEach(function (button) {
+            button.addEventListener("click", window.returnToHome);
+            button.removeAttribute("onclick");
+        });
+
+        // Set copyright year.
         const year = document.getElementById("copyrightYear");
+        if (year) year.textContent = new Date().getFullYear();
 
-        if (year) {
-            year.textContent = new Date().getFullYear();
-        }
+        // Initial screen.
+        home.hidden = false;
+        home.style.display = "block";
 
-        // Start on the homepage.
-        showHomePage("homeHero");
+        app.hidden = true;
+        app.style.display = "none";
 
-        homePage.hidden = false;
-        aiAppScreen.hidden = true;
+        showPage("homeHero");
 
-        homePage.style.display = "block";
-        aiAppScreen.style.display = "none";
-
-        console.log("Divi AI navigation is ready.");
+        console.log("Divi AI navigation initialized successfully.");
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener(
-            "DOMContentLoaded",
-            setupDiviNavigation,
-            { once: true }
-        );
+        document.addEventListener("DOMContentLoaded", initDiviAI, {
+            once: true
+        });
     } else {
-        setupDiviNavigation();
+        initDiviAI();
     }
 })();
 ```
