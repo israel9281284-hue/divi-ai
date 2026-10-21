@@ -2122,3 +2122,190 @@ body:not(.chat-app) {
     }
 }
 ```
+/* =========================================
+   DIVI AI SEPARATE NAVIGATION TABS
+========================================= */
+
+.home-page {
+    min-height: 100vh;
+    background: #f0f9ff;
+    color: #0f172a;
+}
+
+.home-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 6%;
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid #dbeafe;
+    backdrop-filter: blur(14px);
+}
+
+.home-nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.home-nav-links .nav-tab {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #475569;
+    font: inherit;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.home-nav-links .nav-tab:hover,
+.home-nav-links .nav-tab.active {
+    color: #0284c7;
+    background: #e0f2fe;
+}
+
+.home-page .home-section {
+    display: none;
+    min-height: 75vh;
+    padding: 75px 7%;
+    animation: pageFadeIn 0.3s ease;
+}
+
+.home-page .home-section.active-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.home-page #homeHero.active-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 45px;
+}
+
+.home-page #homeFeatures.active-page,
+.home-page #homeAbout.active-page,
+.home-page #homeContact.active-page {
+    display: flex;
+}
+
+.home-page .intro-strip,
+.home-page .home-footer {
+    display: none;
+}
+
+.home-page #homeFeatures.active-page .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 1050px;
+    margin: 35px auto 0;
+}
+
+.home-page .feature-card {
+    padding: 28px;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 12px 35px rgba(2, 132, 199, 0.07);
+}
+
+.home-page #homeAbout.active-page {
+    flex-direction: row;
+    align-items: center;
+    gap: 60px;
+}
+
+.home-page .about-visual,
+.home-page .about-content {
+    flex: 1;
+}
+
+.home-page #homeContact.active-page {
+    align-items: center;
+    text-align: center;
+}
+
+.home-page .contact-card {
+    width: 100%;
+    max-width: 700px;
+    padding: 45px 30px;
+    border: 1px solid #dbeafe;
+    border-radius: 25px;
+    background: white;
+    box-shadow: 0 18px 50px rgba(2, 132, 199, 0.09);
+}
+
+.home-page .contact-details {
+    display: grid;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.home-page .contact-details a {
+    color: #0284c7;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+
+.home-page .contact-details a:hover {
+    text-decoration: underline;
+}
+
+@keyframes pageFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 800px) {
+    .home-navbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 15px 4%;
+    }
+
+    .home-nav-links {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .home-nav-links .nav-tab {
+        padding: 9px 12px;
+    }
+
+    .home-page #homeHero.active-page {
+        grid-template-columns: 1fr;
+    }
+
+    .home-page #homeHero .hero-visual {
+        margin-top: 35px;
+    }
+
+    .home-page #homeFeatures.active-page .feature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .home-page #homeAbout.active-page {
+        flex-direction: column;
+    }
+
+    .home-page .home-section {
+        padding: 45px 6%;
+    }
+}
