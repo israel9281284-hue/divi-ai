@@ -47,6 +47,35 @@ button {
 }
 
 /* ==========================================
+   SCREEN VISIBILITY
+========================================== */
+
+#homePage,
+#homeFeatures,
+#homeAbout,
+#aiAppScreen {
+    display: none !important;
+    width: 100%;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+#homePage.active-screen,
+#homeFeatures.active-screen,
+#homeAbout.active-screen,
+#aiAppScreen.active-screen {
+    display: flex !important;
+    flex-direction: column;
+}
+
+#homePage[hidden],
+#homeFeatures[hidden],
+#homeAbout[hidden],
+#aiAppScreen[hidden] {
+    display: none !important;
+}
+
+/* ==========================================
    LOGOS AND BRANDING
 ========================================== */
 
@@ -176,7 +205,7 @@ button {
 .site-navigation {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 12px;
 }
 
 .site-navigation a {
@@ -188,6 +217,22 @@ button {
 
 .site-navigation a:hover {
     color: #a5b4fc;
+}
+
+.site-navigation button {
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    color: #ffffff;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.site-navigation button:hover {
+    background: rgba(124, 58, 237, 0.4);
 }
 
 .header-launch {
@@ -284,7 +329,12 @@ button {
 .start-button {
     border: none;
     color: #ffffff;
-    background: linear-gradient(135deg, #2563eb, #6366f1, #8b5cf6);
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #6366f1,
+        #8b5cf6
+    );
     box-shadow: 0 10px 30px rgba(99, 102, 241, 0.25);
 }
 
@@ -388,16 +438,66 @@ button {
 }
 
 /* ==========================================
+   STANDALONE HOME FEATURES AND ABOUT SCREENS
+========================================== */
+
+.standalone-screen {
+    width: 100%;
+    min-height: 100vh;
+    padding: 30px 6% 60px;
+    background:
+        radial-gradient(
+            ellipse at 50% 0%,
+            rgba(79, 70, 229, 0.16),
+            transparent 55%
+        ),
+        #080b16;
+}
+
+.standalone-content {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.back-button {
+    align-self: flex-start;
+    margin: 15px 0 30px;
+    padding: 12px 18px;
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+.back-button:hover {
+    background: rgba(124, 58, 237, 0.4);
+}
+
+/* ==========================================
    DIVI AI APPLICATION LAYOUT
 ========================================== */
 
-.app {
+#aiAppScreen {
+    background:
+        radial-gradient(
+            ellipse at 50% 0%,
+            rgba(79, 70, 229, 0.10),
+            transparent 60%
+        ),
+        #080b16;
+}
+
+#aiAppScreen .app {
     position: relative;
+    display: flex;
+    flex: 1;
     width: 95%;
     max-width: 1400px;
     min-height: 90vh;
     margin: 5vh auto;
-    display: none;
     background: rgba(15, 20, 38, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
@@ -419,18 +519,26 @@ button {
     margin-top: 25px;
 }
 
-.sidebar nav a {
+.sidebar nav a,
+.sidebar nav button {
     display: block;
+    width: 100%;
     color: #aab2c8;
     text-decoration: none;
+    text-align: left;
     padding: 13px 14px;
     border-radius: 10px;
     margin-bottom: 6px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
     transition: 0.2s;
 }
 
 .sidebar nav a:hover,
-.sidebar nav a.active {
+.sidebar nav a.active,
+.sidebar nav button:hover,
+.sidebar nav button.active {
     color: #ffffff;
     background: rgba(99, 102, 241, 0.15);
 }
@@ -440,7 +548,12 @@ button {
     padding: 13px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #2563eb, #6366f1, #7c3aed);
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #6366f1,
+        #7c3aed
+    );
     color: #ffffff;
     font-size: 14px;
     font-weight: 700;
@@ -538,17 +651,17 @@ button {
 }
 
 /* ==========================================
-   PAGE SWITCHING
+   APP PAGE SWITCHING
 ========================================== */
 
-.page-section {
-    display: none;
+#aiAppScreen .page-section {
+    display: none !important;
     flex: 1;
     min-height: 0;
 }
 
-.page-section.active-section {
-    display: flex;
+#aiAppScreen .page-section.active-section {
+    display: flex !important;
     flex-direction: column;
 }
 
@@ -574,7 +687,12 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #2563eb, #6366f1, #8b5cf6);
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #6366f1,
+        #8b5cf6
+    );
     box-shadow: 0 0 30px rgba(99, 102, 241, 0.35);
     font-weight: bold;
 }
@@ -778,7 +896,7 @@ button {
 }
 
 /* ==========================================
-   FEATURES PAGE
+   FEATURES PAGE INSIDE THE APP
 ========================================== */
 
 .features-section {
@@ -800,7 +918,12 @@ button {
     align-items: center;
     justify-content: center;
     border-radius: 18px;
-    background: linear-gradient(135deg, #2563eb, #6366f1, #8b5cf6);
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #6366f1,
+        #8b5cf6
+    );
     font-size: 27px;
     box-shadow: 0 0 35px rgba(99, 102, 241, 0.4);
 }
@@ -862,7 +985,7 @@ button {
 }
 
 /* ==========================================
-   ABOUT ME PAGE
+   ABOUT PAGE INSIDE THE APP
 ========================================== */
 
 .about-section {
@@ -896,7 +1019,12 @@ button {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #6366f1, #8b5cf6);
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #6366f1,
+        #8b5cf6
+    );
     font-size: 36px;
     font-weight: bold;
     box-shadow: 0 0 45px rgba(99, 102, 241, 0.4);
@@ -904,123 +1032,384 @@ button {
 
 .about-label {
     display: inline-block;
-    color: #8
+    color: #a78bfa;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+
+.about-card h1 {
+    font-size: clamp(28px, 4vw, 40px);
+    margin-bottom: 15px;
+    color: #ffffff;
+}
+
+.about-card h2 {
+    font-size: 21px;
+    margin-bottom: 12px;
+    color: #dbe4ff;
+}
+
+.about-card h3 {
+    font-size: 17px;
+    margin-bottom: 10px;
+    color: #c4b5fd;
+}
+
+.about-card > p {
+    max-width: 650px;
+    margin: 0 auto 18px;
+    color: #aab3ca;
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.about-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 30px;
+    text-align: left;
+}
+
+.about-detail {
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.about-detail h3 {
+    margin-bottom: 8px;
+}
+
+.about-detail p {
+    color: #929bb0;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.about-message {
+    margin-top: 25px;
+    padding: 18px;
+    border-left: 3px solid #8b5cf6;
+    border-radius: 0 12px 12px 0;
+    background: rgba(99, 102, 241, 0.08);
+    color: #cbd5e1;
+    font-size: 13px;
+    line-height: 1.8;
+    text-align: left;
+}
+
 /* ==========================================
-   DIVI AI — FINAL SCREEN VISIBILITY FIX
+   GENERAL BUTTON INTERACTIONS
 ========================================== */
 
-/* Hide every screen by default. */
-#homePage,
-#homeFeatures,
-#homeAbout,
-#aiAppScreen {
-    display: none !important;
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 100vh;
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #a78bfa;
+    outline-offset: 3px;
 }
 
-/* Show only the selected screen. */
-#homePage.active-screen,
-#homeFeatures.active-screen,
-#homeAbout.active-screen {
-    display: flex !important;
-    flex-direction: column;
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-#aiAppScreen.active-screen {
-    display: flex !important;
-    flex-direction: column;
+/* ==========================================
+   SCROLLBARS
+========================================== */
+
+.chat-box::-webkit-scrollbar,
+.features-section::-webkit-scrollbar,
+.about-section::-webkit-scrollbar {
+    width: 7px;
 }
 
-/* Make the application fill the screen. */
-#aiAppScreen .app {
-    display: flex;
-    flex: 1;
-    width: 100%;
-    min-height: 100vh;
+.chat-box::-webkit-scrollbar-track,
+.features-section::-webkit-scrollbar-track,
+.about-section::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-/* Hide inactive app tabs. */
-#aiAppScreen .page-section {
-    display: none !important;
-}
-
-#aiAppScreen .page-section.active-section {
-    display: flex !important;
-    flex-direction: column;
-}
-
-/* Make homepage navigation look like navigation. */
-.site-navigation {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.site-navigation button {
-    padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 9px;
-    color: #ffffff;
-    font: inherit;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.site-navigation button:hover {
-    background: rgba(124, 58, 237, 0.4);
-}
-
-/* Consistent styling for navigation buttons. */
-.app-navigation .nav-link {
-    display: block;
-    width: 100%;
-    text-align: left;
-    border: none;
-    cursor: pointer;
-}
-
-/* Style the Back Home button. */
-.back-button {
-    align-self: flex-start;
-    margin: 20px 0;
-    padding: 12px 18px;
-    background: rgba(124, 58, 237, 0.2);
-    border: 1px solid rgba(167, 139, 250, 0.4);
+.chat-box::-webkit-scrollbar-thumb,
+.features-section::-webkit-scrollbar-thumb,
+.about-section::-webkit-scrollbar-thumb {
+    background: #303854;
     border-radius: 10px;
-    color: #ffffff;
-    font: inherit;
-    cursor: pointer;
 }
 
-/* Make hidden screens stay hidden. */
-#homePage[hidden],
-#homeFeatures[hidden],
-#homeAbout[hidden],
-#aiAppScreen[hidden] {
-    display: none !important;
+.chat-box::-webkit-scrollbar-thumb:hover,
+.features-section::-webkit-scrollbar-thumb:hover,
+.about-section::-webkit-scrollbar-thumb:hover {
+    background: #6366f1;
 }
 
-/* Responsive navigation. */
+/* ==========================================
+   RESPONSIVE TABLET
+========================================== */
+
+@media (max-width: 1000px) {
+    .sidebar {
+        width: 220px;
+        padding: 20px;
+    }
+
+    .home-features,
+    .feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .home-content {
+        padding-top: 65px;
+    }
+
+    .topbar {
+        padding: 22px;
+    }
+
+    .chat-box {
+        padding: 25px;
+    }
+}
+
+/* ==========================================
+   RESPONSIVE MOBILE
+========================================== */
+
 @media (max-width: 700px) {
+    .home-page {
+        padding: 0 5% 30px;
+    }
+
     .site-header {
+        padding: 18px 0;
         flex-wrap: wrap;
-        gap: 12px;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    .site-brand {
+        margin-right: auto;
     }
 
     .site-navigation {
+        display: flex;
         flex-wrap: wrap;
         justify-content: center;
         width: 100%;
+        gap: 8px;
     }
 
     .site-navigation button {
         padding: 9px 11px;
+        font-size: 12px;
+    }
+
+    .header-launch {
+        padding: 10px 13px;
+    }
+
+    .home-content {
+        padding-top: 55px;
+    }
+
+    .home-content h1 {
+        letter-spacing: -1px;
+    }
+
+    .home-description {
+        font-size: 14px;
+    }
+
+    .home-features,
+    .feature-grid {
+        grid-template-columns: 1fr;
+        margin-top: 35px;
+    }
+
+    .home-feature,
+    .feature-card {
+        padding: 21px;
+    }
+
+    .home-about {
+        margin-top: 45px;
     }
 
     #aiAppScreen .app {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
         flex-direction: column;
+        border-radius: 0;
+        border: none;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 16px;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar .logo {
+        margin-bottom: 15px;
+    }
+
+    .sidebar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .sidebar nav a,
+    .sidebar nav button {
+        width: auto;
+        flex: 1 1 auto;
+        text-align: center;
+        padding: 11px 12px;
+        margin: 0;
+    }
+
+    .new-chat {
+        margin-top: 5px;
+    }
+
+    .home-button {
+        text-align: center;
+    }
+
+    .sidebar-bottom {
+        padding-top: 15px;
+    }
+
+    .topbar {
+        padding: 18px;
+    }
+
+    .topbar h1 {
+        font-size: 20px;
+    }
+
+    .topbar p {
+        font-size: 12px;
+    }
+
+    .online {
+        font-size: 11px;
+    }
+
+    .chat-box {
+        min-height: 300px;
+        padding: 20px 15px;
+    }
+
+    .welcome {
+        margin: 35px auto;
+    }
+
+    .welcome h2 {
+        font-size: 25px;
+    }
+
+    .message {
+        max-width: 90%;
+    }
+
+    .input-container {
+        padding: 15px;
+    }
+
+    .input-area {
+        gap: 6px;
+    }
+
+    #userInput {
+        padding: 9px 5px;
+        font-size: 14px;
+    }
+
+    .voice-button,
+    .send-button {
+        width: 39px;
+        height: 39px;
+        border-radius: 10px;
+    }
+
+    .features-section,
+    .about-section {
+        padding: 22px 15px;
+    }
+
+    .section-heading h2 {
+        font-size: 27px;
+    }
+
+    .about-card {
+        padding: 28px 18px;
+    }
+
+    .about-details {
+        grid-template-columns: 1fr;
+    }
+
+    .standalone-screen {
+        padding: 20px 5% 40px;
     }
 }
+
+/* ==========================================
+   SMALL MOBILE SCREENS
+========================================== */
+
+@media (max-width: 400px) {
+    .site-brand-text strong {
+        font-size: 14px;
+    }
+
+    .site-brand-text small {
+        font-size: 9px;
+    }
+
+    .site-logo {
+        width: 38px;
+        height: 38px;
+    }
+
+    .home-content h1 {
+        font-size: 38px;
+    }
+
+    .home-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .start-button,
+    .explore-button {
+        width: 100%;
+    }
+
+    .topbar {
+        align-items: flex-start;
+    }
+
+    .online {
+        white-space: normal;
+    }
+
+    .ai-modes {
+        gap: 6px;
+    }
+
+    .mode-button {
+        padding: 7px 9px;
+    }
+}
+```
