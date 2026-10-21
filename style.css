@@ -2173,3 +2173,36 @@ body.chat-app {
     display: none !important;
 }
 ```
+```css
+/* Keep hidden pages and screens hidden. */
+[hidden] {
+    display: none !important;
+}
+
+/* Homepage layout */
+#homePage {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Chat application layout */
+#aiAppScreen {
+    width: 100%;
+    min-height: 100vh;
+}
+
+#aiAppScreen:not([hidden]) {
+    display: flex;
+}
+
+/* Homepage navigation buttons */
+.nav-tab,
+[data-open-page],
+.open-ai-button,
+.hero-primary-button,
+.hero-secondary-button,
+.home-return-button,
+.chat-home-button {
+    cursor: pointer;
+}
+```
