@@ -1,69 +1,30 @@
 "use strict";
 
-/* ==========================================
-   DIVI AI — COMPLETE JAVASCRIPT
-   Homepage + Navigation + Chat + History
-========================================== */
-
 (() => {
     const API_URL = "/api/web-search";
-    const HISTORY_KEY = "diviAIConversations_v2";
-    const MAX_CONVERSATIONS = 50;
+    const STORAGE_KEY = "diviAIConversations_v2";
+    const MAX_CHATS = 50;
 
     let conversations = [];
-    let currentConversationId = null;
-    let isSending = false;
+    let currentChatId = null;
+    let sending = false;
     let recognition = null;
 
-    const $ = (selector, parent = document) =>
-        parent.querySelector(selector);
+    const $ = (selector, root = document) =>
+        root.querySelector(selector);
 
-    const $$ = (selector, parent = document) =>
-        Array.from(parent.querySelectorAll(selector));
+    const $$ = (selector, root = document) =>
+        Array.from(root.querySelectorAll(selector));
 
-    const makeId = () =>
+    const createId = () =>
         Date.now().toString(36) +
         Math.random().toString(36).slice(2, 9);
-
-    /* ==========================================
-       SAFE STORAGE
-    ========================================== */
-
-    function saveHistory() {
-        try {
-            localStorage.setItem(
-                HISTORY_KEY,
-                JSON.stringify(conversations)
-            );
-        } catch (error) {
-            console.error("Could not save conversation history:", error);
-            showNotice("Conversation history could not be saved.");
-        }
-    }
-
-    function loadHistory() {
-        try {
-            const saved = localStorage.getItem(HISTORY_KEY);
-            const parsed = saved ? JSON.parse(saved) : [];
-
-            conversations = Array.isArray(parsed)
-                ? parsed.filter(item =>
-                    item &&
-                    typeof item.id === "string" &&
-                    Array.isArray(item.messages)
-                ).slice(0, MAX_CONVERSATIONS)
-                : [];
-        } catch (error) {
-            console.error("Could not load conversation history:", error);
-            conversations = [];
-        }
-    }
 
     /* ==========================================
        NOTIFICATIONS
     ========================================== */
 
-    function showNotice(message) {
+    function notify(message) {
         let notice = $("#diviNotice");
 
         if (!notice) {
@@ -77,57 +38,30 @@
         notice.textContent = message;
         notice.hidden = false;
 
-        clearTimeout(showNotice.timer);
+        clearTimeout(notify.timer);
 
-        showNotice.timer = setTimeout(() => {
+        notify.timer = setTimeout(() => {
             notice.hidden = true;
         }, 3500);
     }
 
     /* ==========================================
-       HOMEPAGE AND CHAT SCREEN
+       HOMEPAGE NAVIGATION
     ========================================== */
 
-    function showHomePage(pageId = "homeHero") {
-        const home = $("#homePage");
-        const app = $("#aiAppScreen");
-
-        if (!home) {
-            showNotice("The homepage element #homePage was not found.");
-            return;
-        }
-
-        if (app) {
-            app.hidden = true;
-            app.style.display = "none";
-        }
-
-        home.hidden = false;
-        home.style.display = "";
-
-        document.body.classList.remove("chat-app");
-
-        showSitePage(pageId);
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-    }
-
-    function showSitePage(pageId) {
-        const validPages = [
+    function showPage(pageId) {
+        const pageIds = [
             "homeHero",
             "homeFeatures",
             "homeAbout",
             "homeContact"
         ];
 
-        if (!validPages.includes(pageId)) {
+        if (!pageIds.includes(pageId)) {
             pageId = "homeHero";
         }
 
-        validPages.forEach(id => {
+        pageIds.forEach(id => {
             const page = document.getElementById(id);
 
             if (page) {
@@ -136,16 +70,18 @@
         });
 
         $$(".nav-tab").forEach(button => {
-            const isActive = button.dataset.page === pageId;
+            const active = button.dataset.page === pageId;
 
-            button.classList.toggle("active", isActive);
+            button.classList.toggle("active", active);
 
-            if (isActive) {
+            if (active) {
                 button.setAttribute("aria-current", "page");
             } else {
                 button.removeAttribute("aria-current");
             }
         });
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function openDiviAI() {
@@ -153,8 +89,7 @@
         const app = $("#aiAppScreen");
 
         if (!app) {
-            showNotice("The chat screen #aiAppScreen was not found.");
-            console.error("Missing HTML element: #aiAppScreen");
+            notify("Chat screen not found. Please check your HTML.");
             return;
         }
 
@@ -168,13 +103,14 @@
 
         document.body.classList.add("chat-app");
 
-        closeSidebar();
-
-        if (!currentConversationId) {
+        if (!currentChatId || !getChat(currentChatId)) {
             createNewChat();
         } else {
-            renderCurrentConversation();
+            renderMessages();
+            renderHistory();
         }
+
+        closeSidebar();
 
         const input = $("#userInput");
 
@@ -184,109 +120,118 @@
     }
 
     function returnToHome() {
+        const home = $("#homePage");
+        const app = $("#aiAppScreen");
+
+        if (app) {
+            app.hidden = true;
+            app.style.display = "none";
+        }
+
+        if (home) {
+            home.hidden = false;
+            home.style.display = "";
+        }
+
+        document.body.classList.remove("chat-app");
+
         closeSidebar();
-        showHomePage("homeHero");
+        showPage("homeHero");
     }
 
     window.openDiviAI = openDiviAI;
     window.returnToHome = returnToHome;
 
     /* ==========================================
-       HOMEPAGE BUTTONS
+       CONNECT HOMEPAGE BUTTONS
     ========================================== */
 
-    function setupHomepageButtons() {
+    function setupNavigation() {
         $$(".nav-tab").forEach(button => {
             button.addEventListener("click", () => {
-                const pageId = button.dataset.page;
-
-                if (pageId) {
-                    showSitePage(pageId);
-
-                    window.scrollTo({
-                        top: 0,
-                        behavior: "smooth"
-                    });
-                }
+                showPage(button.dataset.page);
             });
         });
 
         $$("[data-open-page]").forEach(button => {
             button.addEventListener("click", () => {
-                const pageId = button.dataset.openPage;
-
-                if (pageId) {
-                    showSitePage(pageId);
-
-                    window.scrollTo({
-                        top: 0,
-                        behavior: "smooth"
-                    });
-                }
+                showPage(button.dataset.openPage);
             });
         });
 
-        $$(
-            ".open-ai-button, .hero-primary-button, " +
-            "[data-open-divi], [data-open-chat]"
-        ).forEach(button => {
-            button.addEventListener("click", event => {
-                event.preventDefault();
-                openDiviAI();
+        $$(".open-ai-button, .hero-primary-button, .about-button, .contact-button")
+            .forEach(button => {
+                button.addEventListener("click", openDiviAI);
             });
-        });
 
-        $$(
-            ".home-return-button, .chat-home-button, " +
-            "[data-return-home]"
-        ).forEach(button => {
-            button.addEventListener("click", event => {
-                event.preventDefault();
-                returnToHome();
+        $$(".home-return-button, .chat-home-button")
+            .forEach(button => {
+                button.addEventListener("click", returnToHome);
             });
-        });
 
-        $$(".footer-brand").forEach(button => {
-            button.addEventListener("click", () => {
-                showSitePage("homeHero");
-            });
-        });
-
-        const year = $("#currentYear");
+        const year = $("#copyrightYear");
 
         if (year) {
             year.textContent = new Date().getFullYear();
         }
-
-        $$(".copyright").forEach(element => {
-            if (element.dataset.autoYear === "true") {
-                element.textContent =
-                    `© ${new Date().getFullYear()} Divi AI.`;
-            }
-        });
     }
 
     /* ==========================================
-       CONVERSATION MANAGEMENT
+       CONVERSATION STORAGE
     ========================================== */
 
+    function loadChats() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const parsed = saved ? JSON.parse(saved) : [];
+
+            conversations = Array.isArray(parsed)
+                ? parsed.filter(chat =>
+                    chat &&
+                    typeof chat.id === "string" &&
+                    Array.isArray(chat.messages)
+                ).slice(0, MAX_CHATS)
+                : [];
+        } catch (error) {
+            console.error("Unable to load chat history:", error);
+            conversations = [];
+        }
+    }
+
+    function saveChats() {
+        try {
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(conversations)
+            );
+        } catch (error) {
+            console.error("Unable to save chat history:", error);
+            notify("Could not save conversation history.");
+        }
+    }
+
+    function getChat(id) {
+        return conversations.find(chat => chat.id === id) || null;
+    }
+
     function createNewChat() {
-        const conversation = {
-            id: makeId(),
+        const chat = {
+            id: createId(),
             title: "New chat",
             messages: [],
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
 
-        conversations.unshift(conversation);
-        conversations = conversations.slice(0, MAX_CONVERSATIONS);
+        conversations.unshift(chat);
+        conversations = conversations.slice(0, MAX_CHATS);
 
-        currentConversationId = conversation.id;
+        currentChatId = chat.id;
 
-        saveHistory();
-        renderCurrentConversation();
+        saveChats();
         renderHistory();
+        renderMessages();
+        closeSidebar();
 
         const input = $("#userInput");
 
@@ -295,219 +240,149 @@
             input.style.height = "auto";
             input.focus();
         }
-
-        closeSidebar();
     }
 
-    function getCurrentConversation() {
-        return conversations.find(
-            item => item.id === currentConversationId
-        ) || null;
-    }
+    function deleteChat(id) {
+        conversations = conversations.filter(chat => chat.id !== id);
 
-    function deleteConversation(id) {
-        conversations = conversations.filter(
-            item => item.id !== id
-        );
-
-        if (currentConversationId === id) {
-            currentConversationId = null;
-
-            if (conversations.length) {
-                currentConversationId = conversations[0].id;
-            } else {
-                createNewChat();
-                return;
-            }
+        if (currentChatId === id) {
+            currentChatId = conversations.length
+                ? conversations[0].id
+                : null;
         }
 
-        saveHistory();
+        if (!currentChatId) {
+            saveChats();
+            createNewChat();
+            return;
+        }
+
+        saveChats();
         renderHistory();
-        renderCurrentConversation();
+        renderMessages();
     }
 
     function clearHistory() {
         if (!conversations.length) {
-            showNotice("There is no conversation history to clear.");
+            notify("There are no conversations to clear.");
             return;
         }
 
-        const confirmed = window.confirm(
-            "Clear all saved conversations? This cannot be undone."
-        );
-
-        if (!confirmed) return;
+        if (!window.confirm("Delete all saved conversations?")) {
+            return;
+        }
 
         conversations = [];
-        currentConversationId = null;
+        currentChatId = null;
 
-        saveHistory();
+        saveChats();
         createNewChat();
 
-        showNotice("Conversation history cleared.");
+        notify("Conversation history cleared.");
     }
 
-    function loadConversation(id) {
-        const conversation = conversations.find(
-            item => item.id === id
-        );
+    function selectChat(id) {
+        if (!getChat(id)) return;
 
-        if (!conversation) return;
-
-        currentConversationId = id;
+        currentChatId = id;
 
         renderHistory();
-        renderCurrentConversation();
+        renderMessages();
         closeSidebar();
     }
 
-    function addMessage(role, content, extra = {}) {
-        let conversation = getCurrentConversation();
-
-        if (!conversation) {
-            createNewChat();
-            conversation = getCurrentConversation();
-        }
-
-        const message = {
-            id: makeId(),
-            role,
-            content: String(content),
-            timestamp: Date.now(),
-            ...extra
-        };
-
-        conversation.messages.push(message);
-        conversation.updatedAt = Date.now();
-
-        if (
-            role === "user" &&
-            conversation.title === "New chat"
-        ) {
-            conversation.title = content.length > 38
-                ? content.slice(0, 38) + "…"
-                : content;
-        }
-
-        saveHistory();
-        renderCurrentConversation();
-        renderHistory();
-
-        return message;
-    }
-
     /* ==========================================
-       RENDER CONVERSATION HISTORY
+       RENDER HISTORY
     ========================================== */
 
     function renderHistory() {
-        const history = $("#chatHistory");
+        const container = $("#chatHistory");
 
-        if (!history) return;
+        if (!container) return;
 
-        history.replaceChildren();
+        container.replaceChildren();
 
         if (!conversations.length) {
             const empty = document.createElement("p");
-
             empty.className = "no-history";
             empty.textContent = "Your conversations will appear here.";
-
-            history.appendChild(empty);
+            container.appendChild(empty);
             return;
         }
 
-        conversations.forEach(conversation => {
+        conversations.forEach(chat => {
             const row = document.createElement("div");
-
             row.className = "history-row";
 
-            if (conversation.id === currentConversationId) {
+            if (chat.id === currentChatId) {
                 row.classList.add("selected");
             }
 
             const selectButton = document.createElement("button");
-
             selectButton.type = "button";
             selectButton.className = "history-item";
-            selectButton.title = conversation.title;
+            selectButton.title = chat.title;
 
             const icon = document.createElement("span");
-
             icon.className = "history-icon";
             icon.textContent = "💬";
 
             const title = document.createElement("span");
-
             title.className = "history-text";
-            title.textContent = conversation.title || "New chat";
+            title.textContent = chat.title || "New chat";
 
             selectButton.append(icon, title);
-
-            selectButton.addEventListener("click", () => {
-                loadConversation(conversation.id);
-            });
+            selectButton.addEventListener("click", () => selectChat(chat.id));
 
             const deleteButton = document.createElement("button");
-
             deleteButton.type = "button";
             deleteButton.className = "delete-chat-button";
             deleteButton.textContent = "×";
             deleteButton.title = "Delete conversation";
-            deleteButton.setAttribute(
-                "aria-label",
-                "Delete " + (conversation.title || "conversation")
-            );
+            deleteButton.setAttribute("aria-label", "Delete conversation");
 
             deleteButton.addEventListener("click", event => {
                 event.stopPropagation();
-                deleteConversation(conversation.id);
+                deleteChat(chat.id);
             });
 
             row.append(selectButton, deleteButton);
-            history.appendChild(row);
+            container.appendChild(row);
         });
     }
 
     /* ==========================================
-       RENDER CHAT MESSAGES
+       RENDER MESSAGES
     ========================================== */
 
-    function renderCurrentConversation() {
-        const chatBox = $("#chatBox");
+    function renderMessages() {
+        const box = $("#chatBox");
         const welcome = $("#welcomeScreen");
 
-        if (!chatBox) {
-            console.warn("Chat box #chatBox was not found.");
-            return;
-        }
+        if (!box) return;
 
-        const conversation = getCurrentConversation();
-        const messages = conversation ? conversation.messages : [];
+        const chat = getChat(currentChatId);
+        const messages = chat ? chat.messages : [];
 
         if (welcome) {
             welcome.hidden = messages.length > 0;
         }
 
-        $$(".message", chatBox).forEach(message => {
-            message.remove();
-        });
-
-        $$(".search-results", chatBox).forEach(result => {
-            result.remove();
+        $$(".message, .search-results", box).forEach(element => {
+            element.remove();
         });
 
         messages.forEach(message => {
-            renderMessage(message, false);
+            addMessageToScreen(message, false);
         });
 
-        chatBox.scrollTop = chatBox.scrollHeight;
+        box.scrollTop = box.scrollHeight;
     }
 
-    function renderMessage(message, scroll = true) {
-        const chatBox = $("#chatBox");
+    function addMessageToScreen(message, scroll = true) {
+        const box = $("#chatBox");
 
-        if (!chatBox) return;
+        if (!box) return;
 
         const welcome = $("#welcomeScreen");
 
@@ -515,72 +390,95 @@
             welcome.hidden = true;
         }
 
-        const wrapper = document.createElement("div");
+        const row = document.createElement("div");
 
-        wrapper.className = "message " +
+        row.className = "message " +
             (message.role === "user" ? "user-message" : "ai-message");
 
-        wrapper.dataset.messageId = message.id || "";
-
         const avatar = document.createElement("div");
-
         avatar.className = "message-avatar";
         avatar.textContent = message.role === "user" ? "YOU" : "D";
 
         const content = document.createElement("div");
-
         content.className = "message-content";
-        content.textContent = message.content || "";
+        content.textContent = message.content;
 
-        wrapper.append(avatar, content);
-        chatBox.appendChild(wrapper);
+        row.append(avatar, content);
+        box.appendChild(row);
 
         if (scroll) {
-            chatBox.scrollTop = chatBox.scrollHeight;
+            box.scrollTop = box.scrollHeight;
         }
 
-        return wrapper;
+        return row;
+    }
+
+    function addMessage(role, content) {
+        let chat = getChat(currentChatId);
+
+        if (!chat) {
+            createNewChat();
+            chat = getChat(currentChatId);
+        }
+
+        const message = {
+            id: createId(),
+            role,
+            content: String(content),
+            timestamp: Date.now()
+        };
+
+        chat.messages.push(message);
+        chat.updatedAt = Date.now();
+
+        if (role === "user" && chat.title === "New chat") {
+            chat.title = content.length > 40
+                ? content.slice(0, 40) + "…"
+                : content;
+        }
+
+        saveChats();
+        addMessageToScreen(message);
+        renderHistory();
+
+        return message;
     }
 
     function showLoading() {
-        const chatBox = $("#chatBox");
+        const box = $("#chatBox");
 
-        if (!chatBox) return null;
+        if (!box) return null;
 
-        const wrapper = document.createElement("div");
-
-        wrapper.className = "message ai-message loading-message";
+        const row = document.createElement("div");
+        row.className = "message ai-message loading-message";
 
         const avatar = document.createElement("div");
-
         avatar.className = "message-avatar";
         avatar.textContent = "D";
 
         const content = document.createElement("div");
-
         content.className = "message-content";
         content.textContent = "Divi AI is thinking…";
 
-        wrapper.append(avatar, content);
-        chatBox.appendChild(wrapper);
+        row.append(avatar, content);
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
 
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-        return wrapper;
+        return row;
     }
 
     /* ==========================================
-       WEB SEARCH / AI BACKEND
+       SEND MESSAGE TO YOUR BACKEND
     ========================================== */
 
-    async function requestAnswer(question) {
+    async function askBackend(question) {
         const response = await fetch(API_URL, {
             method: "POST",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
-            credentials: "include",
             body: JSON.stringify({
                 query: question,
                 question: question,
@@ -588,24 +486,23 @@
             })
         });
 
-        const rawText = await response.text();
+        const text = await response.text();
 
-        let data = {};
+        let data;
 
         try {
-            data = rawText ? JSON.parse(rawText) : {};
+            data = text ? JSON.parse(text) : {};
         } catch {
-            data = { response: rawText };
+            data = { response: text };
         }
 
         if (!response.ok) {
-            const errorMessage =
+            throw new Error(
                 data.error ||
                 data.message ||
                 data.detail ||
-                `The server returned HTTP ${response.status}.`;
-
-            throw new Error(errorMessage);
+                `Server error: ${response.status}`
+            );
         }
 
         if (data.error) {
@@ -622,42 +519,24 @@
 
         if (typeof answer === "string" && answer.trim()) {
             return {
-                text: answer.trim(),
-                sources: Array.isArray(data.results)
-                    ? data.results
-                    : Array.isArray(data.sources)
-                        ? data.sources
-                        : []
-            };
-        }
-
-        if (Array.isArray(data.results) && data.results.length) {
-            return {
-                text: data.results.map(item => {
-                    const title = item.title || "Search result";
-                    const url = item.url || "";
-                    const snippet =
-                        item.content || item.snippet || "";
-
-                    return `${title}\n${snippet}\n${url}`;
-                }).join("\n\n"),
-                sources: data.results
+                answer: answer.trim(),
+                sources: data.sources || data.results || []
             };
         }
 
         throw new Error(
-            "The server responded, but no answer was found in its response."
+            "The backend did not return an answer. Check its response format."
         );
     }
-
-    /* ==========================================
-       SEND CHAT MESSAGE
-    ========================================== */
 
     async function sendMessage(text) {
         const question = String(text || "").trim();
 
-        if (!question || isSending) return;
+        if (!question || sending) return;
+
+        if (!getChat(currentChatId)) {
+            createNewChat();
+        }
 
         const input = $("#userInput");
 
@@ -666,139 +545,107 @@
             input.style.height = "auto";
         }
 
-        if (!getCurrentConversation()) {
-            createNewChat();
-        }
-
         addMessage("user", question);
 
-        isSending = true;
+        sending = true;
 
         const sendButton = $("#sendButton");
-        const loading = showLoading();
 
         if (sendButton) {
             sendButton.disabled = true;
         }
 
+        const loading = showLoading();
+
         try {
-            const result = await requestAnswer(question);
+            const result = await askBackend(question);
 
-            if (loading) {
-                loading.remove();
-            }
+            if (loading) loading.remove();
 
-            addMessage("assistant", result.text);
-
-            if (result.sources && result.sources.length) {
-                renderSources(result.sources);
-            }
+            addMessage("assistant", result.answer);
+            renderSources(result.sources);
         } catch (error) {
-            console.error("Divi AI request failed:", error);
+            console.error("Divi AI error:", error);
 
-            if (loading) {
-                loading.remove();
-            }
+            if (loading) loading.remove();
 
             addMessage(
                 "assistant",
-                "Sorry, I couldn't get an answer from the server. " +
+                "I couldn't get an answer from the server.\n\n" +
                 error.message +
-                "\n\nPlease check that the Divi AI backend is running " +
-                "and that its /api/web-search endpoint is configured."
+                "\n\nPlease check that the backend endpoint /api/web-search " +
+                "is working and that its API key is configured."
             );
         } finally {
-            isSending = false;
+            sending = false;
 
             if (sendButton) {
                 sendButton.disabled = false;
             }
 
-            if (input) {
-                input.focus();
-            }
+            if (input) input.focus();
         }
     }
 
     function renderSources(sources) {
-        const chatBox = $("#chatBox");
+        const box = $("#chatBox");
 
-        if (!chatBox) return;
+        if (!box || !Array.isArray(sources) || !sources.length) return;
 
-        const container = document.createElement("div");
-
-        container.className = "search-results";
+        const section = document.createElement("div");
+        section.className = "search-results";
 
         const heading = document.createElement("h3");
-
         heading.textContent = "Sources";
-        container.appendChild(heading);
+        section.appendChild(heading);
 
-        sources.slice(0, 8).forEach(source => {
-            if (!source || typeof source !== "object") return;
-
-            const url = source.url;
+        sources.slice(0, 6).forEach(source => {
+            const url = source && source.url;
 
             if (typeof url !== "string") return;
 
             try {
-                const parsedUrl = new URL(url);
+                const parsed = new URL(url);
 
-                if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-                    return;
-                }
+                if (!["http:", "https:"].includes(parsed.protocol)) return;
 
                 const link = document.createElement("a");
-
                 link.className = "search-result-link";
-                link.href = parsedUrl.href;
+                link.href = parsed.href;
                 link.target = "_blank";
                 link.rel = "noopener noreferrer";
-                link.textContent = source.title || parsedUrl.hostname;
+                link.textContent = source.title || parsed.hostname;
 
-                container.appendChild(link);
+                section.appendChild(link);
             } catch {
-                // Ignore invalid URLs.
+                // Ignore invalid links.
             }
         });
 
-        if (container.children.length > 1) {
-            chatBox.appendChild(container);
-            chatBox.scrollTop = chatBox.scrollHeight;
+        if (section.children.length > 1) {
+            box.appendChild(section);
+            box.scrollTop = box.scrollHeight;
         }
     }
 
     /* ==========================================
-       CHAT FORM AND INPUT
+       CHAT FORM
     ========================================== */
 
-    function setupChatForm() {
+    function setupChat() {
         const form = $("#chatForm");
         const input = $("#userInput");
-        const sendButton = $("#sendButton");
 
         if (form) {
             form.addEventListener("submit", event => {
                 event.preventDefault();
-
-                if (input) {
-                    sendMessage(input.value);
-                }
-            });
-        }
-
-        if (sendButton && !form) {
-            sendButton.addEventListener("click", () => {
-                if (input) {
-                    sendMessage(input.value);
-                }
+                sendMessage(input ? input.value : "");
             });
         }
 
         if (input) {
             input.addEventListener("input", () => {
                 input.style.height = "auto";
-
                 input.style.height =
                     Math.min(input.scrollHeight, 180) + "px";
             });
@@ -811,7 +658,7 @@
                 ) {
                     event.preventDefault();
 
-                    if (form && typeof form.requestSubmit === "function") {
+                    if (form && form.requestSubmit) {
                         form.requestSubmit();
                     } else {
                         sendMessage(input.value);
@@ -820,109 +667,89 @@
             });
         }
 
+        $$("[data-suggestion]").forEach(button => {
+            button.addEventListener("click", () => {
+                sendMessage(button.dataset.suggestion);
+            });
+        });
+
+        // Matches the three suggestion buttons in your supplied HTML.
         $$(".suggestions button").forEach(button => {
             button.addEventListener("click", () => {
-                const text = button.dataset.prompt ||
-                    button.textContent.trim();
+                const suggestion = button.dataset.suggestion;
 
-                if (text) {
-                    openDiviAI();
-                    sendMessage(text);
+                if (suggestion) {
+                    sendMessage(suggestion);
                 }
             });
         });
     }
 
     /* ==========================================
-       NEW CHAT AND CLEAR HISTORY
+       CHAT CONTROL BUTTONS
     ========================================== */
 
-    function setupConversationButtons() {
-        $$(".new-chat, #newChatButton, [data-new-chat]").forEach(button => {
-            button.addEventListener("click", event => {
-                event.preventDefault();
-                createNewChat();
-            });
-        });
+    function setupChatButtons() {
+        const newChatButton = $("#newChatButton");
 
-        $$("#clearHistoryButton, #clearHistory, [data-clear-history]")
-            .forEach(button => {
-                button.addEventListener("click", event => {
-                    event.preventDefault();
-                    clearHistory();
-                });
-            });
+        if (newChatButton) {
+            newChatButton.addEventListener("click", createNewChat);
+        }
 
-        const clearButton = $(
-            ".history-title button:not(.new-chat)"
-        );
+        const clearButton = $("#clearHistoryButton");
 
         if (clearButton) {
-            clearButton.addEventListener("click", event => {
-                event.preventDefault();
-                clearHistory();
+            clearButton.addEventListener("click", clearHistory);
+        }
+
+        const toggle = $("#sidebarToggle");
+        const sidebar = $("#sidebar");
+
+        if (toggle && sidebar) {
+            toggle.addEventListener("click", () => {
+                const opened = sidebar.classList.toggle("sidebar-open");
+
+                toggle.setAttribute("aria-expanded", String(opened));
+            });
+
+            document.addEventListener("click", event => {
+                if (
+                    window.innerWidth <= 760 &&
+                    sidebar.classList.contains("sidebar-open") &&
+                    !sidebar.contains(event.target) &&
+                    !toggle.contains(event.target)
+                ) {
+                    sidebar.classList.remove("sidebar-open");
+                    toggle.setAttribute("aria-expanded", "false");
+                }
             });
         }
+
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 760 && sidebar) {
+                sidebar.classList.remove("sidebar-open");
+            }
+        });
     }
 
-    /* ==========================================
-       MOBILE SIDEBAR
-    ========================================== */
-
     function closeSidebar() {
-        const sidebar = $(".sidebar");
+        const sidebar = $("#sidebar");
+        const toggle = $("#sidebarToggle");
 
         if (sidebar) {
             sidebar.classList.remove("sidebar-open");
         }
-
-        const toggle = $(".sidebar-toggle");
 
         if (toggle) {
             toggle.setAttribute("aria-expanded", "false");
         }
     }
 
-    function setupSidebar() {
-        const toggle = $(".sidebar-toggle");
-        const sidebar = $(".sidebar");
-
-        if (!toggle || !sidebar) return;
-
-        toggle.setAttribute("aria-expanded", "false");
-
-        toggle.addEventListener("click", () => {
-            const isOpen = sidebar.classList.toggle("sidebar-open");
-
-            toggle.setAttribute(
-                "aria-expanded",
-                String(isOpen)
-            );
-        });
-
-        document.addEventListener("click", event => {
-            if (
-                window.innerWidth <= 760 &&
-                sidebar.classList.contains("sidebar-open") &&
-                !sidebar.contains(event.target) &&
-                !toggle.contains(event.target)
-            ) {
-                closeSidebar();
-            }
-        });
-
-        window.addEventListener("resize", () => {
-            if (window.innerWidth > 760) {
-                closeSidebar();
-            }
-        });
-    }
-
     /* ==========================================
        VOICE INPUT
     ========================================== */
 
-    function setupVoiceInput() {
+    function setupVoice() {
         const button = $("#voiceButton");
 
         if (!button) return;
@@ -933,12 +760,8 @@
 
         if (!SpeechRecognition) {
             button.addEventListener("click", () => {
-                showNotice(
-                    "Voice input is not supported by this browser. " +
-                    "Try a supported browser with microphone permission."
-                );
+                notify("Voice input is not supported in this browser.");
             });
-
             return;
         }
 
@@ -950,73 +773,70 @@
         button.addEventListener("click", () => {
             try {
                 recognition.start();
-                button.setAttribute("aria-pressed", "true");
-                showNotice("Listening… Speak now.");
             } catch (error) {
-                console.error("Voice input could not start:", error);
-                showNotice("Voice input is already running or unavailable.");
+                console.warn("Voice recognition could not start:", error);
+                notify("Please try voice input again.");
             }
         });
 
         recognition.addEventListener("result", event => {
-            const transcript = event.results[0][0].transcript;
             const input = $("#userInput");
 
             if (input) {
-                input.value = transcript;
+                input.value = event.results[0][0].transcript;
                 input.dispatchEvent(new Event("input", { bubbles: true }));
                 input.focus();
             }
         });
 
-        recognition.addEventListener("end", () => {
-            button.setAttribute("aria-pressed", "false");
-        });
-
         recognition.addEventListener("error", event => {
-            button.setAttribute("aria-pressed", "false");
-
             if (event.error !== "no-speech") {
-                showNotice("Voice input error: " + event.error);
+                notify("Voice input error: " + event.error);
             }
         });
     }
 
     /* ==========================================
-       START APPLICATION
+       INITIALIZE
     ========================================== */
 
     function init() {
-        loadHistory();
-
-        setupHomepageButtons();
-        setupChatForm();
-        setupConversationButtons();
-        setupSidebar();
-        setupVoiceInput();
+        loadChats();
+        setupNavigation();
+        setupChat();
+        setupChatButtons();
+        setupVoice();
 
         const home = $("#homePage");
         const app = $("#aiAppScreen");
 
-        if (home && app) {
+        if (home) {
             home.hidden = false;
             home.style.display = "";
+        }
 
+        if (app) {
             app.hidden = true;
             app.style.display = "none";
+        }
 
-            document.body.classList.remove("chat-app");
+        document.body.classList.remove("chat-app");
+
+        const year = $("#copyrightYear");
+
+        if (year) {
+            year.textContent = new Date().getFullYear();
         }
 
         if (conversations.length) {
-            currentConversationId = conversations[0].id;
+            currentChatId = conversations[0].id;
         }
 
         renderHistory();
-        renderCurrentConversation();
-        showSitePage("homeHero");
+        renderMessages();
+        showPage("homeHero");
 
-        console.log("Divi AI initialized successfully.");
+        console.log("Divi AI loaded. Navigation and chat buttons initialized.");
     }
 
     if (document.readyState === "loading") {
