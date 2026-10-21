@@ -1,20 +1,22 @@
+```javascript
 "use strict";
 
 // ==================================================
-// DIVI AI — COMPLETE CHAT AND CONVERSATION SYSTEM
+// DIVI AI — HOMEPAGE + CHAT APPLICATION
 // ==================================================
 
-// Backend API
 const SEARCH_API_URL =
     "https://divi-ai.onrender.com/api/web-search";
 
-// Conversation storage
 const HISTORY_KEY = "diviAIConversations_v2";
 const MAX_CONVERSATIONS = 50;
 
 // ==================================================
 // HTML ELEMENTS
 // ==================================================
+
+const homePage = document.getElementById("homePage");
+const aiAppScreen = document.getElementById("aiAppScreen");
 
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
@@ -42,6 +44,43 @@ let conversations = loadConversations();
 let currentConversationId = null;
 let isSending = false;
 let currentMode = "chat";
+let chatInitialized = false;
+
+// ==================================================
+// PAGE NAVIGATION
+// ==================================================
+
+function openDiviAI() {
+    if (homePage) homePage.hidden = true;
+    if (aiAppScreen) aiAppScreen.hidden = false;
+
+    document.body.classList.add("chat-app");
+
+    window.scrollTo(0, 0);
+
+    if (!chatInitialized) {
+        initializeDiviChat();
+    } else {
+        renderHistory();
+        renderConversation(getCurrentConversation());
+        updateChatHeader();
+    }
+}
+
+function returnToHome() {
+    if (aiAppScreen) aiAppScreen.hidden = true;
+    if (homePage) homePage.hidden = false;
+
+    document.body.classList.remove("chat-app");
+
+    closeMobileSidebar();
+
+    window.scrollTo(0, 0);
+}
+
+// Make navigation functions available to HTML buttons.
+window.openDiviAI = openDiviAI;
+window.returnToHome = returnToHome;
 
 // ==================================================
 // CONVERSATION STORAGE
@@ -53,11 +92,8 @@ function loadConversations() {
             localStorage.getItem(HISTORY_KEY) || "[]"
         );
 
-        if (!Array.isArray(saved)) {
-            return [];
-        }
+        if (!Array.isArray(saved)) return [];
 
-        // Validate saved conversations.
         return saved
             .filter(item => item && item.id)
             .map(item => ({
@@ -70,27 +106,19 @@ function loadConversations() {
                 updatedAt: item.updatedAt || new Date().toISOString()
             }));
     } catch (error) {
-        console.error(
-            "Divi AI could not load conversation history:",
-            error
-        );
-
+        console.error("Could not load conversation history:", error);
         return [];
     }
 }
 
 function saveConversations() {
     try {
-        // Keep the newest conversations.
         conversations.sort(
             (a, b) =>
                 new Date(b.updatedAt) - new Date(a.updatedAt)
         );
 
-        conversations = conversations.slice(
-            0,
-            MAX_CONVERSATIONS
-        );
+        conversations = conversations.slice(0, MAX_CONVERSATIONS);
 
         localStorage.setItem(
             HISTORY_KEY,
@@ -99,10 +127,7 @@ function saveConversations() {
 
         return true;
     } catch (error) {
-        console.error(
-            "Divi AI could not save conversations:",
-            error
-        );
+        console.error("Could not save conversations:", error);
 
         showNotice(
             "Conversation history could not be saved in this browser."
@@ -133,8 +158,7 @@ function createConversation() {
 
 function getCurrentConversation() {
     return conversations.find(
-        conversation =>
-            conversation.id === currentConversationId
+        item => item.id === currentConversationId
     ) || null;
 }
 
@@ -152,16 +176,10 @@ function ensureCurrentConversation() {
 }
 
 // ==================================================
-// CHAT SCREEN
+// CHAT HEADER
 // ==================================================
 
-function showChatScreen() {
-    if (chatSection) {
-        chatSection.hidden = false;
-        chatSection.classList.add("active-section");
-        chatSection.style.display = "flex";
-    }
-
+function updateChatHeader() {
     const conversation = getCurrentConversation();
 
     if (pageTitle) {
@@ -171,8 +189,20 @@ function showChatScreen() {
 
     if (pageSubtitle) {
         pageSubtitle.textContent =
-            "Your AI conversation";
+            conversation
+                ? "Your AI conversation"
+                : "What would you like to know?";
     }
+}
+
+function showChatScreen() {
+    if (chatSection) {
+        chatSection.hidden = false;
+        chatSection.classList.add("active-section");
+        chatSection.style.display = "flex";
+    }
+
+    updateChatHeader();
 }
 
 // ==================================================
@@ -203,18 +233,9 @@ function showWelcome() {
     suggestions.className = "suggestions";
 
     const questions = [
-        [
-            "🧠",
-            "Explain artificial intelligence simply"
-        ],
-        [
-            "📚",
-            "Help me understand my school work"
-        ],
-        [
-            "💡",
-            "Give me a creative project idea"
-        ]
+        ["🧠", "Explain artificial intelligence simply"],
+        ["📚", "Help me understand my school work"],
+        ["💡", "Give me a creative project idea"]
     ];
 
     questions.forEach(([iconText, question]) => {
@@ -230,12 +251,12 @@ function showWelcome() {
         button.append(emoji, text);
 
         button.addEventListener("click", () => {
-            if (!userInput || !chatForm) return;
+            if (!userInput) return;
 
             userInput.value = question;
             userInput.focus();
 
-            if (typeof chatForm.requestSubmit === "function") {
+            if (chatForm?.requestSubmit) {
                 chatForm.requestSubmit();
             } else {
                 sendMessage();
@@ -245,13 +266,7 @@ function showWelcome() {
         suggestions.appendChild(button);
     });
 
-    welcome.append(
-        icon,
-        heading,
-        description,
-        suggestions
-    );
-
+    welcome.append(icon, heading, description, suggestions);
     chatBox.appendChild(welcome);
 }
 
@@ -281,22 +296,18 @@ function addMessage(text, sender, options = {}) {
 
     const content = document.createElement("div");
     content.className = "message-content";
-
-    // Use textContent to display text safely.
     content.textContent = String(text ?? "");
 
     message.append(avatar, content);
     chatBox.appendChild(message);
 
-    if (!options.noScroll) {
-        scrollToBottom();
-    }
+    if (!options.noScroll) scrollToBottom();
 
     return message;
 }
 
 // ==================================================
-// DISPLAY A SAVED CONVERSATION
+// RENDER A CONVERSATION
 // ==================================================
 
 function renderConversation(conversation) {
@@ -304,36 +315,18 @@ function renderConversation(conversation) {
 
     chatBox.replaceChildren();
 
-    if (
-        !conversation ||
-        !Array.isArray(conversation.messages) ||
-        conversation.messages.length === 0
-    ) {
+    if (!conversation || !conversation.messages.length) {
         showWelcome();
         return;
     }
 
     conversation.messages.forEach(message => {
-        const role =
-            message.role === "user"
-                ? "user"
-                : "ai";
+        const role = message.role === "user" ? "user" : "ai";
 
-        addMessage(
-            message.text || "",
-            role,
-            { noScroll: true }
-        );
+        addMessage(message.text || "", role, { noScroll: true });
 
-        // Restore saved source links, if available.
-        if (
-            role === "ai" &&
-            Array.isArray(message.sources)
-        ) {
-            addSearchResults(
-                message.sources,
-                { noScroll: true }
-            );
+        if (role === "ai" && Array.isArray(message.sources)) {
+            addSearchResults(message.sources, { noScroll: true });
         }
     });
 
@@ -345,19 +338,15 @@ function renderConversation(conversation) {
 // ==================================================
 
 function makeTitle(question) {
-    const clean = String(question)
-        .trim()
-        .replace(/\s+/g, " ");
+    const clean = String(question).trim().replace(/\s+/g, " ");
 
-    if (clean.length <= 35) {
-        return clean || "New conversation";
-    }
-
-    return clean.slice(0, 32) + "...";
+    return clean.length > 35
+        ? clean.slice(0, 32) + "..."
+        : clean || "New conversation";
 }
 
 // ==================================================
-// CONVERSATION HISTORY SIDEBAR
+// CONVERSATION HISTORY
 // ==================================================
 
 function renderHistory() {
@@ -365,84 +354,68 @@ function renderHistory() {
 
     chatHistory.replaceChildren();
 
-    if (conversations.length === 0) {
+    if (!conversations.length) {
         const empty = document.createElement("p");
-
         empty.className = "no-history";
-        empty.textContent =
-            "Your conversations will appear here.";
+        empty.textContent = "Your conversations will appear here.";
 
         chatHistory.appendChild(empty);
         return;
     }
 
-    const sorted = [...conversations].sort(
-        (a, b) =>
+    [...conversations]
+        .sort((a, b) =>
             new Date(b.updatedAt) - new Date(a.updatedAt)
-    );
+        )
+        .forEach(conversation => {
+            const row = document.createElement("div");
+            row.className = "history-row";
 
-    sorted.forEach(conversation => {
-        const row = document.createElement("div");
-        row.className = "history-row";
+            if (conversation.id === currentConversationId) {
+                row.classList.add("selected");
+            }
 
-        if (conversation.id === currentConversationId) {
-            row.classList.add("selected");
-        }
+            const openButton = document.createElement("button");
+            openButton.type = "button";
+            openButton.className = "history-item";
+            openButton.title = conversation.title;
 
-        const openButton = document.createElement("button");
+            const icon = document.createElement("span");
+            icon.className = "history-icon";
+            icon.textContent = "💬";
 
-        openButton.type = "button";
-        openButton.className = "history-item";
-        openButton.title = conversation.title;
+            const title = document.createElement("span");
+            title.className = "history-text";
+            title.textContent = conversation.title || "New conversation";
 
-        const icon = document.createElement("span");
+            openButton.append(icon, title);
 
-        icon.className = "history-icon";
-        icon.textContent = "💬";
+            openButton.addEventListener("click", () => {
+                openConversation(conversation.id);
+            });
 
-        const title = document.createElement("span");
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "delete-chat-button";
+            deleteButton.textContent = "×";
+            deleteButton.title = "Delete this conversation";
+            deleteButton.setAttribute(
+                "aria-label",
+                "Delete " + conversation.title
+            );
 
-        title.className = "history-text";
-        title.textContent =
-            conversation.title || "New conversation";
+            deleteButton.addEventListener("click", event => {
+                event.stopPropagation();
+                deleteConversation(conversation.id);
+            });
 
-        openButton.append(icon, title);
-
-        openButton.addEventListener("click", () => {
-            openConversation(conversation.id);
+            row.append(openButton, deleteButton);
+            chatHistory.appendChild(row);
         });
-
-        const deleteButton = document.createElement("button");
-
-        deleteButton.type = "button";
-        deleteButton.className = "delete-chat-button";
-        deleteButton.textContent = "×";
-        deleteButton.title = "Delete this conversation";
-
-        deleteButton.setAttribute(
-            "aria-label",
-            "Delete " + conversation.title
-        );
-
-        deleteButton.addEventListener("click", event => {
-            event.stopPropagation();
-
-            deleteConversation(conversation.id);
-        });
-
-        row.append(openButton, deleteButton);
-        chatHistory.appendChild(row);
-    });
 }
 
-// ==================================================
-// OPEN AN EXISTING CONVERSATION
-// ==================================================
-
 function openConversation(id) {
-    const conversation = conversations.find(
-        item => item.id === id
-    );
+    const conversation = conversations.find(item => item.id === id);
 
     if (!conversation) return;
 
@@ -451,28 +424,13 @@ function openConversation(id) {
     renderConversation(conversation);
     renderHistory();
     showChatScreen();
-
-    if (userInput) {
-        userInput.focus();
-    }
-
     closeMobileSidebar();
+
+    userInput?.focus();
 }
 
-// ==================================================
-// DELETE ONE CONVERSATION
-// ==================================================
-
 function deleteConversation(id) {
-    const conversation = conversations.find(
-        item => item.id === id
-    );
-
-    if (!conversation) return;
-
-    conversations = conversations.filter(
-        item => item.id !== id
-    );
+    conversations = conversations.filter(item => item.id !== id);
 
     if (currentConversationId === id) {
         currentConversationId = null;
@@ -487,21 +445,17 @@ function deleteConversation(id) {
     }
 }
 
-// ==================================================
-// CLEAR ALL CONVERSATIONS
-// ==================================================
-
 function clearAllConversations() {
-    if (conversations.length === 0) {
+    if (!conversations.length) {
         showNotice("There are no saved conversations to clear.");
         return;
     }
 
-    const confirmed = window.confirm(
+    if (!window.confirm(
         "Delete all saved conversations? This cannot be undone."
-    );
-
-    if (!confirmed) return;
+    )) {
+        return;
+    }
 
     conversations = [];
     currentConversationId = null;
@@ -509,10 +463,6 @@ function clearAllConversations() {
     saveConversations();
     startNewChat();
 }
-
-// ==================================================
-// START A NEW CHAT
-// ==================================================
 
 function startNewChat() {
     currentConversationId = null;
@@ -528,34 +478,20 @@ function startNewChat() {
     renderHistory();
     closeMobileSidebar();
 
-    if (userInput) {
-        userInput.focus();
-    }
+    userInput?.focus();
 }
 
-if (newChatButton) {
-    newChatButton.addEventListener(
-        "click",
-        startNewChat
-    );
-}
-
-if (clearHistoryButton) {
-    clearHistoryButton.addEventListener(
-        "click",
-        clearAllConversations
-    );
-}
+newChatButton?.addEventListener("click", startNewChat);
+clearHistoryButton?.addEventListener("click", clearAllConversations);
 
 // ==================================================
-// SAVE A MESSAGE TO THE CURRENT CONVERSATION
+// SAVE MESSAGES
 // ==================================================
 
 function saveConversationMessage(role, text, sources = []) {
     const conversation = ensureCurrentConversation();
 
-    const normalizedRole =
-        role === "user" ? "user" : "ai";
+    const normalizedRole = role === "user" ? "user" : "ai";
 
     conversation.messages.push({
         role: normalizedRole,
@@ -566,10 +502,7 @@ function saveConversationMessage(role, text, sources = []) {
 
     if (
         normalizedRole === "user" &&
-        (
-            conversation.title === "New conversation" ||
-            conversation.title === "New chat"
-        )
+        ["New conversation", "New chat"].includes(conversation.title)
     ) {
         conversation.title = makeTitle(text);
     }
@@ -578,76 +511,59 @@ function saveConversationMessage(role, text, sources = []) {
 
     saveConversations();
     renderHistory();
-    showChatScreen();
+    updateChatHeader();
 }
 
 // ==================================================
-// VALIDATE SEARCH RESULT URLS
+// SEARCH RESULTS
 // ==================================================
 
 function getValidSearchResults(results) {
-    if (!Array.isArray(results)) {
-        return [];
-    }
+    if (!Array.isArray(results)) return [];
 
     return results.filter(result => {
-        if (!result || typeof result.url !== "string") {
-            return false;
-        }
+        if (!result || typeof result.url !== "string") return false;
 
         try {
             const url = new URL(result.url);
 
-            return (
-                url.protocol === "https:" ||
-                url.protocol === "http:"
-            );
+            return url.protocol === "https:" || url.protocol === "http:";
         } catch {
             return false;
         }
     });
 }
 
-// ==================================================
-// DISPLAY SEARCH SOURCES
-// ==================================================
-
 function addSearchResults(results, options = {}) {
     if (!chatBox) return;
 
     const validResults = getValidSearchResults(results);
 
-    if (validResults.length === 0) return;
+    if (!validResults.length) return;
 
     const container = document.createElement("div");
     container.className = "message ai-message search-results";
 
     const heading = document.createElement("h3");
     heading.textContent = "Sources";
-
     container.appendChild(heading);
 
     validResults.slice(0, 5).forEach(result => {
         const link = document.createElement("a");
-
         const url = new URL(result.url);
 
         link.href = url.href;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
         link.className = "search-result-link";
-
-        link.textContent =
-            result.title || url.hostname;
+        link.textContent = result.title || url.hostname;
 
         container.appendChild(link);
     });
 
     chatBox.appendChild(container);
 
-    if (!options.noScroll) {
-        scrollToBottom();
-    }
+    if (!options.noScroll) scrollToBottom();
 }
 
 // ==================================================
@@ -658,21 +574,16 @@ function showLoading() {
     if (!chatBox) return null;
 
     const loading = document.createElement("article");
-
-    loading.className =
-        "message ai-message loading-message";
-
+    loading.className = "message ai-message loading-message";
     loading.id = "diviLoading";
 
     const avatar = document.createElement("div");
-
     avatar.className = "message-avatar";
     avatar.textContent = "D";
 
     const text = document.createElement("div");
-
     text.className = "message-content";
-    text.textContent = "Divi AI is thinking...";
+    text.textContent = "Divi AI is searching for an answer...";
 
     loading.append(avatar, text);
     chatBox.appendChild(loading);
@@ -683,15 +594,12 @@ function showLoading() {
 }
 
 // ==================================================
-// EXTRACT AN ANSWER FROM THE BACKEND RESPONSE
+// EXTRACT ANSWER
 // ==================================================
 
 function extractAnswer(data) {
-    if (!data || typeof data !== "object") {
-        return "";
-    }
+    if (!data || typeof data !== "object") return "";
 
-    // Prefer direct answers from the backend.
     const directAnswer =
         data.answer ??
         data.response ??
@@ -699,51 +607,34 @@ function extractAnswer(data) {
         data.result ??
         data.message;
 
-    if (typeof directAnswer === "string") {
-        if (directAnswer.trim()) {
-            return directAnswer.trim();
-        }
-    } else if (
-        directAnswer !== undefined &&
-        directAnswer !== null
-    ) {
+    if (typeof directAnswer === "string" && directAnswer.trim()) {
+        return directAnswer.trim();
+    }
+
+    if (directAnswer !== undefined && directAnswer !== null) {
         try {
             return JSON.stringify(directAnswer, null, 2);
         } catch {
-            // Continue to search-result fallback.
+            // Use search results below.
         }
     }
 
-    // If no direct answer exists, summarize the returned
-    // search-result snippets into a readable response.
     const results = getValidSearchResults(
         data.results || data.sources || []
     );
 
-    if (results.length > 0) {
-        return results
-            .slice(0, 3)
-            .map((item, index) => {
-                const title = item.title || "Search result";
+    return results.slice(0, 3).map((item, index) => {
+        const title = item.title || "Search result";
+        const content = item.content || item.snippet || item.description || "";
 
-                const content =
-                    item.content ||
-                    item.snippet ||
-                    item.description ||
-                    "";
-
-                return content
-                    ? `${index + 1}. ${title}\n${content}`
-                    : `${index + 1}. ${title}`;
-            })
-            .join("\n\n");
-    }
-
-    return "";
+        return content
+            ? `${index + 1}. ${title}\n${content}`
+            : `${index + 1}. ${title}`;
+    }).join("\n\n");
 }
 
 // ==================================================
-// SEND A QUESTION TO THE BACKEND
+// SEND QUESTION TO BACKEND
 // ==================================================
 
 async function sendMessage() {
@@ -754,18 +645,13 @@ async function sendMessage() {
     if (!question) return;
 
     if (!chatBox) {
-        showNotice(
-            "The chat window could not be found. Check index.html."
-        );
-
+        showNotice("The chat window could not be found. Check index.html.");
         return;
     }
 
     isSending = true;
 
-    if (sendButton) {
-        sendButton.disabled = true;
-    }
+    if (sendButton) sendButton.disabled = true;
 
     if (chatBox.querySelector(".welcome")) {
         chatBox.replaceChildren();
@@ -774,86 +660,52 @@ async function sendMessage() {
     userInput.value = "";
     userInput.style.height = "auto";
 
-    // Display and save the question.
     addMessage(question, "user");
-
     saveConversationMessage("user", question);
 
-    // Display a loading indicator.
     const loading = showLoading();
 
     try {
         let query = question;
 
         if (currentMode === "agent") {
-            query =
-                "Help plan this task in practical steps: " +
-                question;
+            query = "Help plan this task in practical steps: " + question;
+        } else if (currentMode === "explain") {
+            query = "Explain this in simple language and give examples: " + question;
         }
 
-        if (currentMode === "explain") {
-            query =
-                "Explain this in simple language and give examples: " +
-                question;
-        }
-
-        // Call the Flask backend.
         const response = await fetch(SEARCH_API_URL, {
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
-
-            body: JSON.stringify({
-                query: query
-            })
+            body: JSON.stringify({ query })
         });
 
-        // Read the response safely.
         const rawResponse = await response.text();
 
         let data = {};
 
         try {
-            data = rawResponse
-                ? JSON.parse(rawResponse)
-                : {};
+            data = rawResponse ? JSON.parse(rawResponse) : {};
         } catch {
             throw new Error(
-                "The server did not return valid JSON. " +
-                "Check your Render backend logs."
+                "The server did not return valid JSON. Check your Render backend."
             );
         }
 
-        // Handle HTTP errors.
         if (!response.ok) {
             const serverError =
-                data.error ||
-                data.message ||
-                data.detail ||
-                "";
+                data.error || data.message || data.detail || "";
 
             if (response.status === 404) {
-                throw new Error(
-                    "The web-search endpoint was not found. " +
-                    "Check the /api/web-search route in app.py."
-                );
+                throw new Error("The /api/web-search endpoint was not found.");
             }
 
-            if (response.status === 401 ||
-                response.status === 403) {
+            if (response.status === 401 || response.status === 403) {
                 throw new Error(
-                    "The server denied the request. " +
-                    "Check the backend authentication settings."
-                );
-            }
-
-            if (response.status >= 500) {
-                throw new Error(
-                    "The backend server encountered an error. " +
-                    (serverError || "Check the Render logs.")
+                    "The server denied the request. Check backend settings."
                 );
             }
 
@@ -863,115 +715,71 @@ async function sendMessage() {
             );
         }
 
-        // Extract the best available answer.
         const answer = extractAnswer(data);
 
         if (!answer) {
             throw new Error(
-                "The backend responded, but it returned no answer " +
-                "or search results. Check the Tavily API key and " +
-                "the response format in app.py."
+                "The backend returned no answer or search results. Check Tavily settings."
             );
         }
 
-        // Keep source results with the assistant message.
         const sources = getValidSearchResults(
             data.results || data.sources || []
         );
 
-        if (loading) {
-            loading.remove();
-        }
+        loading?.remove();
 
-        // Display and save the answer.
         addMessage(answer, "ai");
-
-        saveConversationMessage(
-            "ai",
-            answer,
-            sources
-        );
-
-        // Display source links.
+        saveConversationMessage("ai", answer, sources);
         addSearchResults(sources);
 
     } catch (error) {
         console.error("Divi AI request failed:", error);
 
-        if (loading) {
-            loading.remove();
-        }
+        loading?.remove();
 
-        let errorText =
-            "Sorry, I couldn't get an answer. ";
+        let errorText = "Sorry, I couldn't get an answer. ";
 
-        if (
-            error instanceof TypeError &&
-            /fetch/i.test(error.message)
-        ) {
+        if (error instanceof TypeError) {
             errorText +=
-                "I couldn't connect to the backend. " +
-                "Check your internet connection, Render deployment, " +
-                "and CORS settings.";
+                "I couldn't connect to the backend. Check your internet, Render deployment, and CORS settings.";
         } else {
-            errorText += error.message ||
-                "Please try again.";
+            errorText += error.message || "Please try again.";
         }
 
         addMessage(errorText, "ai");
-
-        saveConversationMessage(
-            "ai",
-            errorText
-        );
+        saveConversationMessage("ai", errorText);
 
     } finally {
         isSending = false;
 
-        if (sendButton) {
-            sendButton.disabled = false;
-        }
+        if (sendButton) sendButton.disabled = false;
 
-        if (userInput) {
-            userInput.focus();
-        }
+        userInput?.focus();
     }
 }
 
 // ==================================================
-// CHAT FORM
+// CHAT INPUT
 // ==================================================
 
-if (chatForm) {
-    chatForm.addEventListener("submit", event => {
-        event.preventDefault();
-        sendMessage();
-    });
-}
-
-// ==================================================
-// TEXT INPUT
-// ==================================================
+chatForm?.addEventListener("submit", event => {
+    event.preventDefault();
+    sendMessage();
+});
 
 if (userInput) {
     userInput.addEventListener("input", () => {
         userInput.style.height = "auto";
-
         userInput.style.height =
             Math.min(userInput.scrollHeight, 180) + "px";
     });
 
     userInput.addEventListener("keydown", event => {
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
+        if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
 
-            if (
-                chatForm &&
-                typeof chatForm.requestSubmit === "function"
-            ) {
+            if (chatForm?.requestSubmit) {
                 chatForm.requestSubmit();
             } else {
                 sendMessage();
@@ -985,19 +793,14 @@ if (userInput) {
 // ==================================================
 
 function closeMobileSidebar() {
-    if (
-        window.innerWidth <= 760 &&
-        sidebar
-    ) {
+    if (window.innerWidth <= 760 && sidebar) {
         sidebar.classList.remove("sidebar-open");
     }
 }
 
-if (sidebarToggle && sidebar) {
-    sidebarToggle.addEventListener("click", () => {
-        sidebar.classList.toggle("sidebar-open");
-    });
-}
+sidebarToggle?.addEventListener("click", () => {
+    sidebar?.classList.toggle("sidebar-open");
+});
 
 // ==================================================
 // VOICE INPUT
@@ -1018,19 +821,11 @@ if (voiceButton && userInput) {
         voiceButton.addEventListener("click", () => {
             try {
                 recognition.start();
-
                 voiceButton.textContent = "…";
                 voiceButton.disabled = true;
-
             } catch (error) {
-                console.warn(
-                    "Voice input could not start:",
-                    error
-                );
-
-                showNotice(
-                    "Voice input could not start. Try again."
-                );
+                console.warn("Voice input could not start:", error);
+                showNotice("Voice input could not start. Try again.");
             }
         });
 
@@ -1039,36 +834,23 @@ if (voiceButton && userInput) {
 
             if (result) {
                 userInput.value = result.transcript;
-
-                userInput.dispatchEvent(
-                    new Event("input")
-                );
-
+                userInput.dispatchEvent(new Event("input"));
                 userInput.focus();
             }
         };
 
         recognition.onerror = event => {
-            console.warn(
-                "Voice input error:",
-                event.error
-            );
-
-            showNotice(
-                "Voice recognition failed. Please try again."
-            );
+            console.warn("Voice input error:", event.error);
+            showNotice("Voice recognition failed. Please try again.");
         };
 
         recognition.onend = () => {
             voiceButton.textContent = "🎤";
             voiceButton.disabled = false;
         };
-
     } else {
         voiceButton.addEventListener("click", () => {
-            showNotice(
-                "Voice input is not supported in this browser."
-            );
+            showNotice("Voice input is not supported in this browser.");
         });
     }
 }
@@ -1078,20 +860,9 @@ if (voiceButton && userInput) {
 // ==================================================
 
 function setMode(mode) {
-    const allowedModes = [
-        "chat",
-        "agent",
-        "explain"
-    ];
+    const allowedModes = ["chat", "agent", "explain"];
 
-    currentMode = allowedModes.includes(mode)
-        ? mode
-        : "chat";
-
-    console.log(
-        "Divi AI mode:",
-        currentMode
-    );
+    currentMode = allowedModes.includes(mode) ? mode : "chat";
 }
 
 // ==================================================
@@ -1107,34 +878,60 @@ function showNotice(message) {
 
     document.body.appendChild(notice);
 
-    window.setTimeout(() => {
-        notice.remove();
-    }, 4500);
+    window.setTimeout(() => notice.remove(), 4500);
 }
 
 // ==================================================
-// INITIALIZATION
+// INITIALIZE CHAT ONLY WHEN OPENED
 // ==================================================
 
-function initializeDiviAI() {
-    console.log("Divi AI initializing...");
+function initializeDiviChat() {
+    if (chatInitialized) return;
+
+    chatInitialized = true;
 
     renderHistory();
 
-    // Start a fresh chat without deleting saved conversations.
-    startNewChat();
+    // Start a new conversation without deleting old ones.
+    currentConversationId = null;
+    showWelcome();
+    showChatScreen();
 
-    console.log(
-        "Divi AI is ready. Backend:",
-        SEARCH_API_URL
-    );
+    console.log("Divi AI chat is ready:", SEARCH_API_URL);
+}
+
+window.initializeDiviChat = initializeDiviChat;
+
+// ==================================================
+// INITIAL PAGE SETUP
+// ==================================================
+
+function initializeDiviAI() {
+    renderHistory();
+
+    // Start on the homepage, not inside the chat.
+    if (homePage && aiAppScreen) {
+        homePage.hidden = false;
+        aiAppScreen.hidden = true;
+        document.body.classList.remove("chat-app");
+    } else {
+        // Fallback in case the homepage markup is not present.
+        if (aiAppScreen) aiAppScreen.hidden = false;
+        initializeDiviChat();
+    }
+
+    const year = document.getElementById("copyrightYear");
+
+    if (year) {
+        year.textContent = new Date().getFullYear();
+    }
+
+    console.log("Divi AI homepage is ready.");
 }
 
 if (document.readyState === "loading") {
-    document.addEventListener(
-        "DOMContentLoaded",
-        initializeDiviAI
-    );
+    document.addEventListener("DOMContentLoaded", initializeDiviAI);
 } else {
     initializeDiviAI();
 }
+```
