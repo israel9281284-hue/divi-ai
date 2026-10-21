@@ -1,29 +1,32 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Divi AI — Intelligent Assistant</title>
 
-  <link rel="icon" type="image/png" href="divi-logo.png">
+    <link rel="icon" type="image/png" href="divi-logo.png">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-<!-- ================================
-     DIVI AI HOMEPAGE
-     ================================ -->
 
-<section id="homePage" class="home-page">
+<div class="background-glow"></div>
+
+<!-- =====================================
+     HOMEPAGE
+===================================== -->
+
+<section id="homePage" class="home-page active-screen">
 
     <header class="site-header">
 
-        <a href="#homePage" class="site-brand">
-           <span class="site-logo">
-    <img src="divi-logo.png" alt="Divi AI Logo">
-</span>
+        <a href="#homePage" class="site-brand" data-screen="homePage">
+            <span class="site-logo">
+                <img src="divi-logo.png" alt="Divi AI Logo">
+            </span>
 
             <span class="site-brand-text">
                 <strong>DIVI AI</strong>
@@ -32,20 +35,16 @@
         </a>
 
         <nav class="site-navigation">
-            <a href="#homePage">Home</a>
-            <a href="#homeFeatures">Features</a>
-            <a href="#homeAbout">About</a>
+            <button type="button" data-screen="homePage">Home</button>
+            <button type="button" data-screen="homeFeatures">Features</button>
+            <button type="button" data-screen="homeAbout">About</button>
         </nav>
 
-        <button
-            class="header-launch"
-            id="headerLaunchButton"
-            type="button">
+        <button class="header-launch" id="headerLaunchButton" type="button">
             Launch AI →
         </button>
 
     </header>
-
 
     <div class="home-content">
 
@@ -58,9 +57,7 @@
             <span>Build with Divi AI.</span>
         </h1>
 
-        <h2>
-            Intelligence designed to help you explore more.
-        </h2>
+        <h2>Intelligence designed to help you explore more.</h2>
 
         <p class="home-description">
             Ask questions, explore ideas, search for information,
@@ -69,140 +66,256 @@
 
         <div class="home-buttons">
 
-            <button
-                id="startDiviButton"
-                class="start-button"
-                type="button">
+            <button id="startDiviButton" class="start-button" type="button">
                 Launch Divi AI →
             </button>
 
-            <button
-                id="exploreFeaturesButton"
-                class="explore-button"
-                type="button">
+            <button id="exploreFeaturesButton" class="explore-button" type="button">
                 Explore Features
             </button>
 
         </div>
 
+    </div>
 
-        <div class="home-features" id="homeFeatures">
+</section>
 
-            <div class="home-feature">
-                <div class="home-feature-icon">🧠</div>
 
-                <h3>Intelligent Assistance</h3>
+<!-- =====================================
+     SEPARATE HOMEPAGE FEATURES SCREEN
+===================================== -->
 
-                <p>
-                    Explore questions, ideas, and problems
-                    with an assistant designed to help.
-                </p>
+<section id="homeFeatures" class="standalone-screen">
+
+    <header class="site-header">
+
+        <a href="#homePage" class="site-brand" data-screen="homePage">
+            <span class="site-logo">
+                <img src="divi-logo.png" alt="Divi AI Logo">
+            </span>
+
+            <span class="site-brand-text">
+                <strong>DIVI AI</strong>
+                <small>Intelligent Assistant</small>
+            </span>
+        </a>
+
+        <button class="header-launch" type="button" data-screen="appChat">
+            Launch AI →
+        </button>
+
+    </header>
+
+    <div class="standalone-content">
+
+        <button class="back-button" type="button" data-screen="homePage">
+            ← Back Home
+        </button>
+
+        <div class="section-heading">
+            <div class="section-icon">⚡</div>
+            <h1>Explore Divi AI Features</h1>
+            <p>Discover the tools designed to make your experience easier.</p>
+        </div>
+
+        <div class="feature-grid">
+
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>AI Chat</h3>
+                <p>Ask questions and communicate with the Divi AI assistant.</p>
             </div>
 
-
-            <div class="home-feature">
-                <div class="home-feature-icon">🌐</div>
-
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
                 <h3>Web Search</h3>
-
-                <p>
-                    Find useful online information
-                    through the web search feature.
-                </p>
+                <p>Search for useful information from online sources.</p>
             </div>
 
+            <div class="feature-card">
+                <div class="feature-icon">🎤</div>
+                <h3>Voice Input</h3>
+                <p>Use your voice to enter questions when your browser supports it.</p>
+            </div>
 
-            <div class="home-feature">
-                <div class="home-feature-icon">🎤</div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Learning Support</h3>
+                <p>Explore topics, ideas, and school questions.</p>
+            </div>
 
-                <h3>Voice Interaction</h3>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Responsive Design</h3>
+                <p>Use the interface on supported phones, tablets, and computers.</p>
+            </div>
 
-                <p>
-                    Make interacting with your digital
-                    assistant more convenient.
-                </p>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>Growing Project</h3>
+                <p>Divi AI is a project that can continue improving with development.</p>
             </div>
 
         </div>
 
+        <button class="start-button" type="button" data-screen="appChat">
+            Try Divi AI →
+        </button>
 
-        <div class="home-about" id="homeAbout">
+    </div>
 
-            <div class="home-about-line"></div>
+</section>
+
+
+<!-- =====================================
+     SEPARATE ABOUT SCREEN
+===================================== -->
+
+<section id="homeAbout" class="standalone-screen">
+
+    <header class="site-header">
+
+        <a href="#homePage" class="site-brand" data-screen="homePage">
+            <span class="site-logo">
+                <img src="divi-logo.png" alt="Divi AI Logo">
+            </span>
+
+            <span class="site-brand-text">
+                <strong>DIVI AI</strong>
+                <small>Intelligent Assistant</small>
+            </span>
+        </a>
+
+        <button class="header-launch" type="button" data-screen="appChat">
+            Launch AI →
+        </button>
+
+    </header>
+
+    <div class="standalone-content">
+
+        <button class="back-button" type="button" data-screen="homePage">
+            ← Back Home
+        </button>
+
+        <div class="about-card">
+
+            <div class="about-avatar">I</div>
+
+            <span class="about-label">THE CREATOR</span>
+
+            <h1>About Divi AI</h1>
+
+            <h3>Created by Israel</h3>
 
             <p>
-                BUILT WITH CURIOSITY. DESIGNED FOR THE FUTURE.
+                Divi AI is a project created to explore artificial
+                intelligence, technology, and useful digital tools.
             </p>
 
-            <span>
-                Created by Israel · Divi AI
-            </span>
+            <p>
+                The goal is to make it easier for people to explore ideas,
+                learn about different subjects, and solve problems.
+            </p>
+
+            <p>
+                Developing Divi AI is also an opportunity to learn more
+                about software development, AI models, APIs, and web design.
+            </p>
+
+            <div class="about-details">
+
+                <div>
+                    <strong>Creator</strong>
+                    <span>Israel</span>
+                </div>
+
+                <div>
+                    <strong>Project</strong>
+                    <span>Divi AI</span>
+                </div>
+
+                <div>
+                    <strong>Version</strong>
+                    <span>1.0</span>
+                </div>
+
+            </div>
+
+            <div class="about-message">
+                <strong>My Vision</strong>
+                <p>
+                    To keep learning, building, and creating technology
+                    that can help people.
+                </p>
+            </div>
 
         </div>
 
     </div>
 
-</section>    
-    <div class="background-glow"></div>
+</section>
+
+
+<!-- =====================================
+     DIVI AI APPLICATION
+===================================== -->
+
+<section id="aiAppScreen" class="app-screen">
 
     <div class="app">
 
-        <!-- SIDEBAR -->
         <aside class="sidebar">
 
             <div class="logo">
 
-             <div class="logo-icon ds-logo">
-    <img src="divi-logo.png" alt="Divi AI Logo">
-</div>
-<div class="brand-text">
-    <h2>DIVI AI</h2>
-    <span>Intelligent Digital Assistant</span>
-</div>
+                <div class="logo-icon ds-logo">
+                    <img src="divi-logo.png" alt="Divi AI Logo">
+                </div>
+
+                <div class="brand-text">
+                    <h2>DIVI AI</h2>
+                    <span>Intelligent Digital Assistant</span>
+                </div>
+
             </div>
 
-
-            <button class="new-chat" id="newChatButton">
+            <button class="new-chat" id="newChatButton" type="button">
                 + New Chat
             </button>
-<button class="home-button" id="diviHomeButton" type="button">
-    🏠 Home
-</button>
-            <!-- NAVIGATION -->
-            <nav>
 
-                <a href="#chat" class="nav-link active" data-section="chat">
+            <button class="home-button" id="diviHomeButton" type="button">
+                🏠 Home
+            </button>
+
+            <nav class="app-navigation">
+
+                <button type="button" class="nav-link active" data-section="chat">
                     💬 Chat
-                </a>
+                </button>
 
-                <a href="#features" class="nav-link" data-section="features">
+                <button type="button" class="nav-link" data-section="features">
                     ⚡ Features
-                </a>
+                </button>
 
-                <a href="#about" class="nav-link" data-section="about">
+                <button type="button" class="nav-link" data-section="about">
                     👤 About Me
-                </a>
+                </button>
+
             </nav>
 
-            <!-- CHAT HISTORY -->
+            <div class="history-container">
 
-<div class="history-container">
+                <div class="history-title">
+                    <span>Recent Chats</span>
+                    <button id="clearHistoryButton" type="button">Clear</button>
+                </div>
 
-    <div class="history-title">
-        <span>Recent Chats</span>
+                <div id="chatHistory" class="chat-history">
+                    <p class="no-history">No conversations yet</p>
+                </div>
 
-        <button id="clearHistoryButton">
-            Clear
-        </button>
-    </div>
-
-    <div id="chatHistory" class="chat-history">
-        <p class="no-history">
-            No conversations yet
-        </p>
-    </div>
-
-</div>
+            </div>
 
             <div class="sidebar-bottom">
 
@@ -218,39 +331,24 @@
         </aside>
 
 
-        <!-- MAIN -->
         <main class="main">
 
-
-            <!-- TOP BAR -->
             <header class="topbar">
 
                 <div>
-
-                    <h1 id="pageTitle">
-                        Divi AI
-                    </h1>
-
-                    <p id="pageSubtitle">
-                        Your intelligent digital assistant
-                    </p>
-
+                    <h1 id="pageTitle">Divi AI</h1>
+                    <p id="pageSubtitle">Your intelligent digital assistant</p>
                 </div>
 
-
                 <div class="online">
-
                     <span></span>
-
                     Online
-
                 </div>
 
             </header>
 
 
-
-            <!-- ================= CHAT ================= -->
+            <!-- APP CHAT -->
 
             <section id="chat" class="page-section active-section">
 
@@ -258,31 +356,26 @@
 
                     <div class="welcome">
 
-                        <div class="welcome-icon">
-                            D
-                        </div>
+                        <div class="welcome-icon">D</div>
 
-                        <h2>
-                            Hello, I'm Divi AI 👋
-                        </h2>
+                        <h2>Hello, I'm Divi AI 👋</h2>
 
                         <p>
-                            Your intelligent assistant for questions,
-                            ideas, learning, and problem solving.
+                            Your assistant for questions, ideas, learning,
+                            and problem solving.
                         </p>
-
 
                         <div class="suggestions">
 
-                            <button onclick="useSuggestion('Explain artificial intelligence simply')">
+                            <button type="button" onclick="useSuggestion('Explain artificial intelligence simply')">
                                 Explain AI simply
                             </button>
 
-                            <button onclick="useSuggestion('Help me with my school work')">
+                            <button type="button" onclick="useSuggestion('Help me with my school work')">
                                 Help with school
                             </button>
 
-                            <button onclick="useSuggestion('Give me a creative idea')">
+                            <button type="button" onclick="useSuggestion('Give me a creative idea')">
                                 Give me an idea
                             </button>
 
@@ -292,36 +385,31 @@
 
                 </div>
 
-<!-- AI MODES -->
-<div class="ai-modes">
-    <span class="mode-label">AI Mode:</span>
+                <div class="ai-modes">
 
-    <button class="mode-button active" data-mode="chat">
-        💬 Chat
-    </button>
+                    <span class="mode-label">AI Mode:</span>
 
-    <button class="mode-button" data-mode="agent">
-        🧠 Agent
-    </button>
+                    <button class="mode-button active" data-mode="chat" type="button">
+                        💬 Chat
+                    </button>
 
-    <button class="mode-button" data-mode="explain">
-        💡 Explain
-    </button>
-</div>
+                    <button class="mode-button" data-mode="agent" type="button">
+                        🧠 Agent
+                    </button>
 
-                
-                <!-- INPUT -->
+                    <button class="mode-button" data-mode="explain" type="button">
+                        💡 Explain
+                    </button>
+
+                </div>
 
                 <div class="input-container">
 
                     <div class="input-area">
 
-                        <button
-                            class="voice-button"
-                            title="Voice input">
+                        <button class="voice-button" id="voiceButton" type="button" title="Voice input">
                             🎤
                         </button>
-
 
                         <input
                             type="text"
@@ -329,15 +417,11 @@
                             placeholder="Message Divi AI..."
                             autocomplete="off">
 
-
-                        <button
-                            id="sendButton"
-                            class="send-button">
+                        <button id="sendButton" class="send-button" type="button">
                             ➤
                         </button>
 
                     </div>
-
 
                     <p class="disclaimer">
                         Divi AI can make mistakes. Check important information.
@@ -348,138 +432,56 @@
             </section>
 
 
+            <!-- APP FEATURES -->
 
-            <!-- ================= FEATURES ================= -->
-
-            <section
-                id="features"
-                class="page-section features-section">
+            <section id="features" class="page-section features-section">
 
                 <div class="section-heading">
 
-                    <div class="section-icon">
-                        ⚡
-                    </div>
+                    <div class="section-icon">⚡</div>
 
-                    <h2>
-                        Divi AI Features
-                    </h2>
+                    <h2>Divi AI Features</h2>
 
-                    <p>
-                        Built to make AI simple, useful, and accessible.
-                    </p>
+                    <p>Built to make AI simple, useful, and accessible.</p>
 
                 </div>
 
-
                 <div class="feature-grid">
 
-
                     <div class="feature-card">
-
-                        <div class="feature-icon">
-                            💬
-                        </div>
-
-                        <h3>
-                            AI Chat
-                        </h3>
-
-                        <p>
-                            Ask questions and communicate with Divi AI
-                            through a simple conversation interface.
-                        </p>
-
+                        <div class="feature-icon">💬</div>
+                        <h3>AI Chat</h3>
+                        <p>Ask questions through a simple conversation interface.</p>
                     </div>
 
-
                     <div class="feature-card">
-
-                        <div class="feature-icon">
-                            🎤
-                        </div>
-
-                        <h3>
-                            Voice Input
-                        </h3>
-
-                        <p>
-                            Speak your questions instead of typing them
-                            using the voice input feature.
-                        </p>
-
+                        <div class="feature-icon">🎤</div>
+                        <h3>Voice Input</h3>
+                        <p>Speak questions instead of typing when supported.</p>
                     </div>
 
-
                     <div class="feature-card">
-
-                        <div class="feature-icon">
-                            🧠
-                        </div>
-
-                        <h3>
-                            Problem Solving
-                        </h3>
-
-                        <p>
-                            Divi AI is designed to help users understand
-                            questions, ideas, and everyday problems.
-                        </p>
-
+                        <div class="feature-icon">🌐</div>
+                        <h3>Web Search</h3>
+                        <p>Search online for information using the connected search service.</p>
                     </div>
 
-
                     <div class="feature-card">
-
-                        <div class="feature-icon">
-                            📱
-                        </div>
-
-                        <h3>
-                            Mobile Friendly
-                        </h3>
-
-                        <p>
-                            The interface is designed to work on phones,
-                            tablets, and computers.
-                        </p>
-
+                        <div class="feature-icon">🧠</div>
+                        <h3>Problem Solving</h3>
+                        <p>Explore questions, ideas, and everyday problems.</p>
                     </div>
 
-
                     <div class="feature-card">
-
-                        <div class="feature-icon">
-                            ⚡
-                        </div>
-
-                        <h3>
-                            Fast Interface
-                        </h3>
-
-                        <p>
-                            A clean interface helps users communicate
-                            with the assistant without unnecessary steps.
-                        </p>
-
+                        <div class="feature-icon">📱</div>
+                        <h3>Mobile Friendly</h3>
+                        <p>Use the interface on different screen sizes.</p>
                     </div>
 
-
                     <div class="feature-card">
-
-                        <div class="feature-icon">
-                            🔧
-                        </div>
-
-                        <h3>
-                            Growing Project
-                        </h3>
-
-                        <p>
-                            Divi AI is being developed with new capabilities
-                            and improvements over time.
-                        </p>
-
+                        <div class="feature-icon">🚀</div>
+                        <h3>Growing Project</h3>
+                        <p>Continue improving Divi AI as new capabilities are developed.</p>
                     </div>
 
                 </div>
@@ -487,59 +489,29 @@
             </section>
 
 
+            <!-- APP ABOUT -->
 
-            <!-- ================= ABOUT ME ================= -->
-
-            <section
-                id="about"
-                class="page-section about-section">
-
+            <section id="about" class="page-section about-section">
 
                 <div class="about-card">
 
+                    <div class="about-avatar">I</div>
 
-                    <div class="about-avatar">
-                        I
-                    </div>
+                    <span class="about-label">THE CREATOR</span>
 
+                    <h2>About Me</h2>
 
-                    <span class="about-label">
-                        THE CREATOR
-                    </span>
-
-
-                    <h2>
-                        About Me
-                    </h2>
-
-
-                    <h3>
-                        I'm Israel, the creator of Divi AI.
-                    </h3>
-
+                    <h3>I'm Israel, the creator of Divi AI.</h3>
 
                     <p>
-                        I created Divi AI because I am interested in
-                        technology, artificial intelligence, and building
-                        useful digital tools.
+                        I created Divi AI because I am interested in technology,
+                        artificial intelligence, and building useful digital tools.
                     </p>
-
 
                     <p>
-                        My goal with this project is to explore how
-                        artificial intelligence can make learning,
-                        problem solving, creativity, and everyday tasks
-                        easier.
+                        My goal is to explore how AI can support learning,
+                        problem solving, and creativity.
                     </p>
-
-
-                    <p>
-                        Divi AI is also an opportunity for me to learn
-                        more about software development, APIs, AI models,
-                        and modern web technology while creating something
-                        of my own.
-                    </p>
-
 
                     <div class="about-details">
 
@@ -548,12 +520,10 @@
                             <span>Israel</span>
                         </div>
 
-
                         <div>
                             <strong>Project</strong>
                             <span>Divi AI</span>
                         </div>
-
 
                         <div>
                             <strong>Version</strong>
@@ -562,30 +532,24 @@
 
                     </div>
 
-
                     <div class="about-message">
-
                         <strong>My Vision</strong>
-
-                        <p>
-                            To keep learning, building, and using technology
-                            to create solutions that can help people.
-                        </p>
-
+                        <p>To keep learning, building, and creating technology that can help people.</p>
                     </div>
 
                 </div>
 
             </section>
 
-
         </main>
 
     </div>
 
+</section>
 
-    <script src="script.js"></script>
+
+<script src="script.js"></script>
 
 </body>
-
 </html>
+```
