@@ -905,3 +905,122 @@ button {
 .about-label {
     display: inline-block;
     color: #8
+/* ==========================================
+   DIVI AI — FINAL SCREEN VISIBILITY FIX
+========================================== */
+
+/* Hide every screen by default. */
+#homePage,
+#homeFeatures,
+#homeAbout,
+#aiAppScreen {
+    display: none !important;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Show only the selected screen. */
+#homePage.active-screen,
+#homeFeatures.active-screen,
+#homeAbout.active-screen {
+    display: flex !important;
+    flex-direction: column;
+}
+
+#aiAppScreen.active-screen {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Make the application fill the screen. */
+#aiAppScreen .app {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Hide inactive app tabs. */
+#aiAppScreen .page-section {
+    display: none !important;
+}
+
+#aiAppScreen .page-section.active-section {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Make homepage navigation look like navigation. */
+.site-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.site-navigation button {
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    color: #ffffff;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.site-navigation button:hover {
+    background: rgba(124, 58, 237, 0.4);
+}
+
+/* Consistent styling for navigation buttons. */
+.app-navigation .nav-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    cursor: pointer;
+}
+
+/* Style the Back Home button. */
+.back-button {
+    align-self: flex-start;
+    margin: 20px 0;
+    padding: 12px 18px;
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    border-radius: 10px;
+    color: #ffffff;
+    font: inherit;
+    cursor: pointer;
+}
+
+/* Make hidden screens stay hidden. */
+#homePage[hidden],
+#homeFeatures[hidden],
+#homeAbout[hidden],
+#aiAppScreen[hidden] {
+    display: none !important;
+}
+
+/* Responsive navigation. */
+@media (max-width: 700px) {
+    .site-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .site-navigation {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .site-navigation button {
+        padding: 9px 11px;
+    }
+
+    #aiAppScreen .app {
+        flex-direction: column;
+    }
+}
