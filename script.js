@@ -1,61 +1,58 @@
 ```javascript
-(function () {
-    "use strict";
+"use strict";
 
+// DIVI AI BUTTON FIX
+
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Divi AI JavaScript loaded successfully!");
+
+    const homePage = document.getElementById("homePage");
+    const aiAppScreen = document.getElementById("aiAppScreen");
+
+    // Open the AI chat screen
     window.openDiviAI = function () {
-        var home = document.getElementById("homePage");
-        var app = document.getElementById("aiAppScreen");
-
-        if (!home || !app) {
-            alert("Divi AI could not find its homepage or chat screen.");
+        if (!homePage || !aiAppScreen) {
+            console.error("Cannot find homePage or aiAppScreen.");
+            alert("Please check the IDs in your index.html file.");
             return;
         }
 
-        home.hidden = true;
-        app.hidden = false;
+        homePage.hidden = true;
+        aiAppScreen.hidden = false;
+
+        homePage.style.display = "none";
+        aiAppScreen.style.display = "flex";
+
         document.body.classList.add("chat-app");
+
+        console.log("Divi AI chat opened!");
     };
 
+    // Return to the homepage
     window.returnToHome = function () {
-        var home = document.getElementById("homePage");
-        var app = document.getElementById("aiAppScreen");
+        if (!homePage || !aiAppScreen) {
+            console.error("Cannot find homepage or chat screen.");
+            return;
+        }
 
-        if (app) app.hidden = true;
-        if (home) home.hidden = false;
+        aiAppScreen.hidden = true;
+        homePage.hidden = false;
+
+        aiAppScreen.style.display = "none";
+        homePage.style.display = "flex";
 
         document.body.classList.remove("chat-app");
+
+        console.log("Returned to homepage!");
     };
 
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".nav-tab").forEach(function (button) {
-            button.addEventListener("click", function () {
-                var target = button.getAttribute("data-page");
-
-                document.querySelectorAll(
-                    "#homePage main .site-view"
-                ).forEach(function (section) {
-                    section.hidden = section.id !== target;
-                });
-
-                document.querySelectorAll(".nav-tab").forEach(function (tab) {
-                    tab.classList.toggle("active", tab === button);
-                });
-            });
-        });
-
-        document.querySelectorAll("[data-open-page]").forEach(function (button) {
-            button.addEventListener("click", function () {
-                var target = button.getAttribute("data-open-page");
-
-                document.querySelectorAll(
-                    "#homePage main .site-view"
-                ).forEach(function (section) {
-                    section.hidden = section.id !== target;
-                });
-            });
-        });
-
-        console.log("Divi AI emergency script loaded.");
+    // Connect buttons automatically
+    document.querySelectorAll("[data-open-divi]").forEach(function (button) {
+        button.addEventListener("click", window.openDiviAI);
     });
-})();
+
+    document.querySelectorAll("[data-return-home]").forEach(function (button) {
+        button.addEventListener("click", window.returnToHome);
+    });
+});
 ```
