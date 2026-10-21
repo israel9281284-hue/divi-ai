@@ -1,8 +1,8 @@
-import requests
 import os
+import requests
+
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-
 
 from auth import (
     init_db,
@@ -13,70 +13,92 @@ from auth import (
     current_username
 )
 
+
+# ==========================================
+# APPLICATION CONFIGURATION
+# ==========================================
+
 app = Flask(__name__)
 
-# Secret used to protect login sessions
-app.secret_key = os.environ.get(
-    "SESSION_SECRET",
-    "change-this-secret-in-render"
+app.secret_key = os.environ.get("SESSION_SECRET")
+
+if not app.secret_key:
+    app.logger.warning(
+        "SESSION_SECRET is not configured. "
+        "Set a strong secret in your Render environment variables."
+    )
+    app.secret_key = "development-only-change-this-secret"
+
+# GitHub Pages frontend.
+CORS(
+    app,
+    supports_credentials=True,
+    origins=[
+        "https://israel9281284-hue.github.io",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000"
+    ]
 )
 
-CORS(app, supports_credentials=True)
-
-# Create the users database
+# Initialize the users database.
 init_db()
 
 
 # ==========================================
-# HOME
+# HOME / HEALTH CHECK
 # ==========================================
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def home():
     return jsonify({
         "name": "Divi AI Backend",
         "status": "online",
-        "message": "Welcome to Divi AI!"
+        "message": "Welcome to Divi AI!",
+        "endpoints": [
+            "/api/register",
+            "/api/login",
+            "/api/auth/status",
+            "/api/logout",
+            "/api/voice-command",
+            "/api/web-search"
+        ]
     })
+
+
 # ==========================================
 # REGISTER
 # ==========================================
 
 @app.route("/api/register", methods=["POST"])
 def register():
-
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+    data = request.get_json(silent=True) or {}
 
     username = data.get("username", "").strip()
     password = data.get("password", "")
 
     if not username or not password:
         return jsonify({
-            "error": "Username and password are required"
+            "error": "Username and password are required."
         }), 400
 
     if len(username) < 3:
         return jsonify({
-            "error": "Username must be at least 3 characters"
+            "error": "Username must be at least 3 characters."
         }), 400
 
     if len(password) < 6:
         return jsonify({
-            "error": "Password must be at least 6 characters"
+            "error": "Password must be at least 6 characters."
         }), 400
 
     if create_user(username, password):
-
         return jsonify({
             "status": "success",
-            "message": "Account created successfully"
-        })
+            "message": "Account created successfully."
+        }), 201
 
     return jsonify({
-        "error": "Username already exists"
+        "error": "Username already exists."
     }), 409
 
 
@@ -86,37 +108,35 @@ def register():
 
 @app.route("/api/login", methods=["POST"])
 def login():
-
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+    data = request.get_json(silent=True) or {}
 
     username = data.get("username", "").strip()
     password = data.get("password", "")
 
-    if login_user(username, password):
+    if not username or not password:
+        return jsonify({
+            "error": "Enter your username and password."
+        }), 400
 
+    if login_user(username, password):
         return jsonify({
             "status": "success",
-            "message": "Login successful",
+            "message": "Login successful.",
             "username": current_username()
         })
 
     return jsonify({
-        "error": "Invalid username or password"
+        "error": "Invalid username or password."
     }), 401
 
 
 # ==========================================
-# CHECK LOGIN
+# CHECK LOGIN STATUS
 # ==========================================
 
 @app.route("/api/auth/status", methods=["GET"])
 def auth_status():
-
     if is_logged_in():
-
         return jsonify({
             "logged_in": True,
             "username": current_username()
@@ -133,28 +153,233 @@ def auth_status():
 
 @app.route("/api/logout", methods=["POST"])
 def logout():
-
     logout_user()
 
     return jsonify({
         "status": "success",
-        "message": "Logged out successfully"
+        "message": "Logged out successfully."
     })
 
 
 # ==========================================
-# DIVI AI
+# TAVILY SEARCH HELPER
+# ==========================================
+
+def search_tavily(query):
+    """
+    Search the web through Tavily.
+
+    Returns a dictionary containing an answer and sources.
+    Raises ValueError for configuration or API errors.
+    """
+
+    api_key = os.environ.get("TAVILY_API_KEY", "").strip()
+
+    if not api_key:
+        app.logger.error(
+            "TAVILY_API_KEY is missing from environment variables."
+        )
+
+        raise ValueError(
+            "Web search is not configured. "
+            "Add TAVILY_API_KEY to your Render environment variables."
+        )
+
+    try:
+        response = requests.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": api_key,
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 5,
+                "include_answer": True
+            },
+            timeout=30
+        )
+
+    except requests.Timeout as exc:
+        app.logger.exception("Tavily request timed out.")
+
+        raise ValueError(
+            "The web search took too long. Please try again."
+        ) from exc
+
+    except requests.RequestException as exc:
+        app.logger.exception("Could not connect to Tavily.")
+
+        raise ValueError(
+            "Could not connect to the web search service."
+        ) from exc
+
+    if not response.ok:
+        app.logger.error(
+            "Tavily returned HTTP %s: %s",
+            response.status_code,
+            response.text[:500]
+        )
+
+        if response.status_code in (401, 403):
+            raise ValueError(
+                "Tavily rejected the API key. "
+                "Check that TAVILY_API_KEY is valid."
+            )
+
+        if response.status_code == 429:
+            raise ValueError(
+                "Tavily rate limit or usage limit reached. "
+                "Check your Tavily account."
+            )
+
+        raise ValueError(
+            "The web search service returned an error. "
+            "Check your Tavily account and Render logs."
+        )
+
+    try:
+        search_data = response.json()
+    except ValueError as exc:
+        raise ValueError(
+            "The web search service returned invalid data."
+        ) from exc
+
+    raw_results = search_data.get("results", [])
+
+    results = []
+
+    for item in raw_results:
+        results.append({
+            "title": item.get("title", "Search result"),
+            "url": item.get("url", ""),
+            "content": item.get("content", "")
+        })
+
+    # Prefer Tavily's direct answer.
+    answer = search_data.get("answer")
+
+    # If no direct answer exists, build a readable response
+    # from the available search snippets.
+    if not answer and results:
+        sections = []
+
+        for index, item in enumerate(results[:3], start=1):
+            title = item["title"]
+            content = item["content"]
+
+            if content:
+                sections.append(
+                    f"{index}. {title}\n{content}"
+                )
+
+        answer = "\n\n".join(sections)
+
+    if not answer:
+        answer = (
+            "I couldn't find enough information to answer that "
+            "question. Try using different search terms."
+        )
+
+    return {
+        "answer": answer,
+        "results": results
+    }
+
+
+# ==========================================
+# WEB SEARCH — MAIN FRONTEND ENDPOINT
+# ==========================================
+
+@app.route("/api/web-search", methods=["POST"])
+def web_search():
+    data = request.get_json(silent=True) or {}
+
+    query = data.get("query", "")
+
+    if not isinstance(query, str):
+        return jsonify({
+            "error": "Your question must be text."
+        }), 400
+
+    query = query.strip()
+
+    if not query:
+        return jsonify({
+            "error": "Please enter a question."
+        }), 400
+
+    if len(query) > 500:
+        return jsonify({
+            "error": "Your question is too long. Keep it under 500 characters."
+        }), 400
+
+    try:
+        result = search_tavily(query)
+
+        return jsonify({
+            "status": "success",
+            "query": query,
+            "answer": result["answer"],
+            "results": result["results"]
+        }), 200
+
+    except ValueError as error:
+        app.logger.warning("Web search failed: %s", error)
+
+        message = str(error)
+
+        if "TAVILY_API_KEY" in message:
+            return jsonify({
+                "error": message
+            }), 503
+
+        if "too long" in message.lower():
+            return jsonify({
+                "error": message
+            }), 504
+
+        if "rate limit" in message.lower():
+            return jsonify({
+                "error": message
+            }), 429
+
+        if "api key" in message.lower():
+            return jsonify({
+                "error": message
+            }), 502
+
+        return jsonify({
+            "error": message
+        }), 502
+
+    except Exception:
+        app.logger.exception("Unexpected web-search error.")
+
+        return jsonify({
+            "error": "An unexpected server error occurred. Please try again."
+        }), 500
+
+
+# ==========================================
+# VOICE COMMAND
 # ==========================================
 
 @app.route("/api/voice-command", methods=["POST"])
 def voice_command():
     if not is_logged_in():
         return jsonify({
-            "error": "Please log in first"
+            "error": "Please log in first."
         }), 401
 
     data = request.get_json(silent=True) or {}
-    user_command = data.get("command", "").strip()
+
+    user_command = data.get("command", "")
+
+    if not isinstance(user_command, str):
+        return jsonify({
+            "error": "Your command must be text."
+        }), 400
+
+    user_command = user_command.strip()
 
     if not user_command:
         return jsonify({
@@ -166,146 +391,45 @@ def voice_command():
             "error": "Your command is too long."
         }), 400
 
-    tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
-
-    if not tavily_api_key:
-        app.logger.error("TAVILY_API_KEY is missing.")
-        return jsonify({
-            "error": "Web search is not configured yet."
-        }), 503
-
     try:
-        result = requests.post(
-            "https://api.tavily.com/search",
-            json={
-                "api_key": tavily_api_key,
-                "query": user_command,
-                "search_depth": "basic",
-                "max_results": 5,
-                "include_answer": True
-            },
-            timeout=30
-        )
-
-        if not result.ok:
-            app.logger.error(
-                "Tavily returned HTTP %s: %s",
-                result.status_code,
-                result.text[:500]
-            )
-            return jsonify({
-                "error": "Tavily search failed.",
-                "status_code": result.status_code
-            }), 502
-
-        search_data = result.json()
+        result = search_tavily(user_command)
 
         return jsonify({
             "status": "success",
             "command": user_command,
-            "answer": (
-                search_data.get("answer")
-                or "Here are the search results I found."
-            ),
-            "results": [
-                {
-                    "title": item.get("title"),
-                    "url": item.get("url"),
-                    "content": item.get("content")
-                }
-                for item in search_data.get("results", [])
-            ]
-        })
+            "answer": result["answer"],
+            "results": result["results"]
+        }), 200
 
-    except requests.RequestException:
-        app.logger.exception("Tavily voice search failed")
+    except ValueError as error:
+        app.logger.warning(
+            "Voice-command search failed: %s",
+            error
+        )
+
         return jsonify({
-            "error": "Web search is temporarily unavailable."
+            "error": str(error)
         }), 502
+
+    except Exception:
+        app.logger.exception(
+            "Unexpected voice-command error."
+        )
+
+        return jsonify({
+            "error": "The voice command could not be completed."
+        }), 500
+
+
 # ==========================================
 # START SERVER
 # ==========================================
 
-# ==========================================
-# TAVILY WEB SEARCH
-# ==========================================
-
-@app.route("/api/web-search", methods=["POST"])
-def web_search():
-    data = request.get_json(silent=True) or {}
-    query = data.get("query", "").strip()
-
-    if not query:
-        return jsonify({
-            "error": "Please enter something to search for."
-        }), 400
-
-    if len(query) > 500:
-        return jsonify({
-            "error": "Your search query is too long."
-        }), 400
-
-    tavily_api_key = os.environ.get("TAVILY_API_KEY", "").strip()
-
-    if not tavily_api_key:
-        app.logger.error("TAVILY_API_KEY is missing.")
-        return jsonify({
-            "error": "Web search is not configured yet."
-        }), 503
-
-    try:
-        result = requests.post(
-            "https://api.tavily.com/search",
-            json={
-                "api_key": tavily_api_key,
-                "query": query,
-                "search_depth": "basic",
-                "max_results": 5,
-                "include_answer": True
-            },
-            timeout=30
-        )
-
-        if not result.ok:
-            app.logger.error(
-                "Tavily returned HTTP %s: %s",
-                result.status_code,
-                result.text[:500]
-            )
-            return jsonify({
-                "error": "Tavily search failed.",
-                "status_code": result.status_code
-            }), 502
-
-        search_data = result.json()
-
-        return jsonify({
-            "status": "success",
-            "query": query,
-            "answer": (
-                search_data.get("answer")
-                or "Here are the search results I found."
-            ),
-            "results": [
-                {
-                    "title": item.get("title"),
-                    "url": item.get("url"),
-                    "content": item.get("content")
-                }
-                for item in search_data.get("results", [])
-            ]
-        })
-
-    except requests.RequestException:
-        app.logger.exception("Tavily search request failed")
-        return jsonify({
-            "error": "Web search is temporarily unavailable."
-        }), 502
 if __name__ == "__main__":
-
     port = int(os.environ.get("PORT", 5000))
 
     app.run(
         host="0.0.0.0",
-        port=port
+        port=port,
+        debug=False
     )
