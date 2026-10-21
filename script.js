@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-    const API_URL = "/api/web-search";
+    const API_URL = "https://divi-ai.onrender.com/api/web-search";
     const STORAGE_KEY = "diviAIConversations_v2";
     const MAX_CHATS = 50;
 
