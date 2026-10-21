@@ -471,7 +471,17 @@
        SEND MESSAGE TO YOUR BACKEND
     ========================================== */
 
-    async function askBackend(question) {
+        async function askBackend(question) {
+        const chat = getChat(currentChatId);
+
+        // Get the previous messages in this conversation.
+        const history = (chat?.messages || [])
+            .slice(-12)
+            .map(message => ({
+                role: message.role === "assistant" ? "assistant" : "user",
+                content: message.content
+            }));
+
         const response = await fetch(API_URL, {
             method: "POST",
             credentials: "include",
@@ -482,12 +492,13 @@
             body: JSON.stringify({
                 query: question,
                 question: question,
-                search_query: question
+                search_query: question,
+                history: history,
+                messages: history
             })
         });
 
         const text = await response.text();
-
         let data;
 
         try {
@@ -528,7 +539,6 @@
             "The backend did not return an answer. Check its response format."
         );
     }
-
     async function sendMessage(text) {
         const question = String(text || "").trim();
 
