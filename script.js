@@ -2,12 +2,10 @@
 "use strict";
 
 // ==================================================
-// DIVI AI — HOMEPAGE + CHAT APPLICATION
+// DIVI AI — COMPLETE MAIN JAVASCRIPT
 // ==================================================
 
-const SEARCH_API_URL =
-    "https://divi-ai.onrender.com/api/web-search";
-
+const SEARCH_API_URL = "https://divi-ai.onrender.com/api/web-search";
 const HISTORY_KEY = "diviAIConversations_v2";
 const MAX_CONVERSATIONS = 50;
 
@@ -19,22 +17,20 @@ const homePage = document.getElementById("homePage");
 const aiAppScreen = document.getElementById("aiAppScreen");
 
 const chatBox = document.getElementById("chatBox");
-const userInput = document.getElementById("userInput");
-const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
 const sendButton = document.getElementById("sendButton");
-const voiceButton = document.getElementById("voiceButton");
 
+const historyList = document.getElementById("historyList");
 const newChatButton = document.getElementById("newChatButton");
-const clearHistoryButton =
-    document.getElementById("clearHistoryButton");
-const chatHistory = document.getElementById("chatHistory");
+const clearHistoryButton = document.getElementById("clearHistoryButton");
 
-const pageTitle = document.getElementById("pageTitle");
-const pageSubtitle = document.getElementById("pageSubtitle");
+const chatTitle = document.getElementById("chatTitle");
+const welcomeScreen = document.getElementById("welcomeScreen");
+const chatScreen = document.getElementById("chatScreen");
 
+const voiceButton = document.getElementById("voiceButton");
 const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebarToggle");
-const chatSection = document.getElementById("chat");
 
 // ==================================================
 // APPLICATION STATE
@@ -43,12 +39,57 @@ const chatSection = document.getElementById("chat");
 let conversations = loadConversations();
 let currentConversationId = null;
 let isSending = false;
-let currentMode = "chat";
 let chatInitialized = false;
+let recognition = null;
 
-```javascript
 // ==================================================
-// PAGE NAVIGATION
+// STORAGE
+// ==================================================
+
+function loadConversations() {
+    try {
+        const saved = localStorage.getItem(HISTORY_KEY);
+        const parsed = saved ? JSON.parse(saved) : [];
+
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.error("Could not load chat history:", error);
+        return [];
+    }
+}
+
+function saveConversations() {
+    try {
+        conversations = conversations.slice(0, MAX_CONVERSATIONS);
+
+        localStorage.setItem(
+            HISTORY_KEY,
+            JSON.stringify(conversations)
+        );
+    } catch (error) {
+        console.error("Could not save chat history:", error);
+        showNotification("Could not save chat history in this browser.");
+    }
+}
+
+function createConversation() {
+    return {
+        id: Date.now().toString() + Math.random().toString(36).slice(2, 8),
+        title: "New chat",
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+}
+
+function getCurrentConversation() {
+    return conversations.find(
+        conversation => conversation.id === currentConversationId
+    ) || null;
+}
+
+// ==================================================
+// HOMEPAGE NAVIGATION
 // ==================================================
 
 const sitePageIds = [
@@ -57,6 +98,13 @@ const sitePageIds = [
     "homeAbout",
     "homeContact"
 ];
+
+const hashToPage = {
+    "#home": "homeHero",
+    "#features": "homeFeatures",
+    "#about": "homeAbout",
+    "#contact": "homeContact"
+};
 
 function showSitePage(pageId, updateAddress = true) {
     if (!sitePageIds.includes(pageId)) {
@@ -84,26 +132,29 @@ function showSitePage(pageId, updateAddress = true) {
     });
 
     if (updateAddress) {
-        const hashNames = {
+        const pageToHash = {
             homeHero: "home",
             homeFeatures: "features",
             homeAbout: "about",
             homeContact: "contact"
         };
 
-        history.replaceState(null, "", "#" + hashNames[pageId]);
+        history.replaceState(null, "", "#" + pageToHash[pageId]);
     }
 
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function openDiviAI() {
-    if (homePage) homePage.hidden = true;
-    if (aiAppScreen) aiAppScreen.hidden = false;
+    if (!homePage || !aiAppScreen) {
+        console.error("Homepage or chat screen is missing from index.html.");
+        return;
+    }
+
+    homePage.hidden = true;
+    aiAppScreen.hidden = false;
 
     document.body.classList.add("chat-app");
-
-    window.scrollTo(0, 0);
 
     if (!chatInitialized) {
         initializeDiviChat();
@@ -112,22 +163,22 @@ function openDiviAI() {
         renderConversation(getCurrentConversation());
         updateChatHeader();
     }
+
+    window.scrollTo(0, 0);
 }
 
 function returnToHome() {
-    if (aiAppScreen) aiAppScreen.hidden = true;
-    if (homePage) homePage.hidden = false;
+    if (aiAppScreen) {
+        aiAppScreen.hidden = true;
+    }
+
+    if (homePage) {
+        homePage.hidden = false;
+    }
 
     document.body.classList.remove("chat-app");
 
     closeMobileSidebar();
-
-    const hashToPage = {
-        "#home": "homeHero",
-        "#features": "homeFeatures",
-        "#about": "homeAbout",
-        "#contact": "homeContact"
-    };
 
     const requestedPage =
         hashToPage[window.location.hash.toLowerCase()] || "homeHero";
@@ -137,872 +188,790 @@ function returnToHome() {
     window.scrollTo(0, 0);
 }
 
+window.openDiviAI = openDiviAI;
+window.returnToHome = returnToHome;
+window.showSitePage = showSitePage;
+
+// Navigation buttons
 document.querySelectorAll(".nav-tab").forEach(button => {
     button.addEventListener("click", () => {
         showSitePage(button.dataset.page);
     });
 });
 
+// Footer links and buttons that open a homepage section
 document.querySelectorAll("[data-open-page]").forEach(button => {
     button.addEventListener("click", () => {
         showSitePage(button.dataset.openPage);
     });
 });
 
-window.openDiviAI = openDiviAI;
-window.returnToHome = returnToHome;
-window.showSitePage = showSitePage;
-```
+// Any button with data-open-ai opens the chat application
+document.querySelectorAll("[data-open-ai]").forEach(button => {
+    button.addEventListener("click", openDiviAI);
+});
+
+// Support homepage links that use #home, #features, #about, or #contact
+window.addEventListener("hashchange", () => {
+    if (homePage && !homePage.hidden) {
+        const page = hashToPage[window.location.hash.toLowerCase()];
+        showSitePage(page || "homeHero", false);
+    }
+});
+
 // ==================================================
-// CONVERSATION STORAGE
+// CHAT SCREEN
 // ==================================================
 
-function loadConversations() {
-    try {
-        const saved = JSON.parse(
-            localStorage.getItem(HISTORY_KEY) || "[]"
-        );
+function showWelcomeScreen() {
+    if (welcomeScreen) welcomeScreen.hidden = false;
+    if (chatScreen) chatScreen.hidden = true;
+}
 
-        if (!Array.isArray(saved)) return [];
+function showChatScreen() {
+    if (welcomeScreen) welcomeScreen.hidden = true;
+    if (chatScreen) chatScreen.hidden = false;
+}
 
-        return saved
-            .filter(item => item && item.id)
-            .map(item => ({
-                id: String(item.id),
-                title: item.title || "New conversation",
-                messages: Array.isArray(item.messages)
-                    ? item.messages
-                    : [],
-                createdAt: item.createdAt || new Date().toISOString(),
-                updatedAt: item.updatedAt || new Date().toISOString()
-            }));
-    } catch (error) {
-        console.error("Could not load conversation history:", error);
-        return [];
+function initializeDiviChat() {
+    chatInitialized = true;
+
+    renderHistory();
+
+    if (conversations.length > 0) {
+        currentConversationId = conversations[0].id;
+        renderConversation(getCurrentConversation());
+        updateChatHeader();
+    } else {
+        currentConversationId = null;
+        showWelcomeScreen();
+
+        if (chatBox) {
+            chatBox.innerHTML = "";
+        }
+
+        updateChatHeader();
     }
 }
-
-function saveConversations() {
-    try {
-        conversations.sort(
-            (a, b) =>
-                new Date(b.updatedAt) - new Date(a.updatedAt)
-        );
-
-        conversations = conversations.slice(0, MAX_CONVERSATIONS);
-
-        localStorage.setItem(
-            HISTORY_KEY,
-            JSON.stringify(conversations)
-        );
-
-        return true;
-    } catch (error) {
-        console.error("Could not save conversations:", error);
-
-        showNotice(
-            "Conversation history could not be saved in this browser."
-        );
-
-        return false;
-    }
-}
-
-function createConversation() {
-    const id =
-        window.crypto &&
-        typeof window.crypto.randomUUID === "function"
-            ? window.crypto.randomUUID()
-            : Date.now().toString(36) +
-              Math.random().toString(36).slice(2);
-
-    const now = new Date().toISOString();
-
-    return {
-        id,
-        title: "New conversation",
-        messages: [],
-        createdAt: now,
-        updatedAt: now
-    };
-}
-
-function getCurrentConversation() {
-    return conversations.find(
-        item => item.id === currentConversationId
-    ) || null;
-}
-
-function ensureCurrentConversation() {
-    let conversation = getCurrentConversation();
-
-    if (!conversation) {
-        conversation = createConversation();
-
-        conversations.unshift(conversation);
-        currentConversationId = conversation.id;
-    }
-
-    return conversation;
-}
-
-// ==================================================
-// CHAT HEADER
-// ==================================================
 
 function updateChatHeader() {
     const conversation = getCurrentConversation();
 
-    if (pageTitle) {
-        pageTitle.textContent =
-            conversation?.title || "Divi AI";
-    }
-
-    if (pageSubtitle) {
-        pageSubtitle.textContent =
-            conversation
-                ? "Your AI conversation"
-                : "What would you like to know?";
+    if (chatTitle) {
+        chatTitle.textContent = conversation
+            ? conversation.title
+            : "Divi AI";
     }
 }
 
-function showChatScreen() {
-    if (chatSection) {
-        chatSection.hidden = false;
-        chatSection.classList.add("active-section");
-        chatSection.style.display = "flex";
+// ==================================================
+// CREATE A NEW CHAT
+// ==================================================
+
+function startNewChat() {
+    currentConversationId = null;
+
+    if (chatBox) {
+        chatBox.innerHTML = "";
     }
 
+    showWelcomeScreen();
     updateChatHeader();
+    renderHistory();
+
+    if (chatInput) {
+        chatInput.value = "";
+        chatInput.focus();
+    }
+
+    closeMobileSidebar();
+}
+
+if (newChatButton) {
+    newChatButton.addEventListener("click", startNewChat);
+}
+
+// Also support buttons that use this class
+document.querySelectorAll(".new-chat-button").forEach(button => {
+    if (button !== newChatButton) {
+        button.addEventListener("click", startNewChat);
+    }
+});
+
+// ==================================================
+// CLEAR CHAT HISTORY
+// ==================================================
+
+function clearHistory() {
+    const confirmed = window.confirm(
+        "Are you sure you want to delete all your chat history?"
+    );
+
+    if (!confirmed) return;
+
+    conversations = [];
+    currentConversationId = null;
+
+    saveConversations();
+    renderHistory();
+
+    if (chatBox) {
+        chatBox.innerHTML = "";
+    }
+
+    showWelcomeScreen();
+    updateChatHeader();
+
+    showNotification("Chat history cleared.");
+}
+
+if (clearHistoryButton) {
+    clearHistoryButton.addEventListener("click", clearHistory);
 }
 
 // ==================================================
-// WELCOME SCREEN
+// RENDER CHAT HISTORY
 // ==================================================
 
-function showWelcome() {
+function renderHistory() {
+    if (!historyList) return;
+
+    historyList.innerHTML = "";
+
+    if (conversations.length === 0) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "empty-history";
+        emptyMessage.textContent = "Your conversations will appear here.";
+        historyList.appendChild(emptyMessage);
+        return;
+    }
+
+    conversations.forEach(conversation => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        if (conversation.id === currentConversationId) {
+            row.classList.add("active");
+        }
+
+        const openButton = document.createElement("button");
+        openButton.type = "button";
+        openButton.className = "history-open";
+        openButton.textContent = conversation.title || "New chat";
+        openButton.title = conversation.title || "New chat";
+
+        openButton.addEventListener("click", () => {
+            currentConversationId = conversation.id;
+            renderConversation(conversation);
+            updateChatHeader();
+            renderHistory();
+            closeMobileSidebar();
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "history-delete";
+        deleteButton.textContent = "×";
+        deleteButton.setAttribute("aria-label", "Delete conversation");
+
+        deleteButton.addEventListener("click", event => {
+            event.stopPropagation();
+            deleteConversation(conversation.id);
+        });
+
+        row.appendChild(openButton);
+        row.appendChild(deleteButton);
+        historyList.appendChild(row);
+    });
+}
+
+function deleteConversation(id) {
+    conversations = conversations.filter(
+        conversation => conversation.id !== id
+    );
+
+    if (currentConversationId === id) {
+        currentConversationId = null;
+
+        if (chatBox) {
+            chatBox.innerHTML = "";
+        }
+
+        showWelcomeScreen();
+        updateChatHeader();
+    }
+
+    saveConversations();
+    renderHistory();
+
+    showNotification("Conversation deleted.");
+}
+
+// ==================================================
+// RENDER MESSAGES
+// ==================================================
+
+function renderConversation(conversation) {
     if (!chatBox) return;
 
-    chatBox.replaceChildren();
+    chatBox.innerHTML = "";
 
-    const welcome = document.createElement("div");
-    welcome.className = "welcome";
-    welcome.id = "welcomeScreen";
+    if (!conversation || !Array.isArray(conversation.messages)) {
+        showWelcomeScreen();
+        return;
+    }
 
-    const icon = document.createElement("div");
-    icon.className = "welcome-icon";
-    icon.textContent = "D";
+    if (conversation.messages.length === 0) {
+        showWelcomeScreen();
+        return;
+    }
 
-    const heading = document.createElement("h2");
-    heading.textContent = "What can I help you with?";
+    showChatScreen();
 
-    const description = document.createElement("p");
-    description.textContent =
-        "Ask a question, explore an idea, or learn something new.";
+    conversation.messages.forEach(message => {
+        appendMessage(
+            message.role,
+            message.content,
+            message.sources || []
+        );
+    });
 
-    const suggestions = document.createElement("div");
-    suggestions.className = "suggestions";
+    scrollChatToBottom();
+}
 
-    const questions = [
-        ["🧠", "Explain artificial intelligence simply"],
-        ["📚", "Help me understand my school work"],
-        ["💡", "Give me a creative project idea"]
-    ];
+function appendMessage(role, content, sources = []) {
+    if (!chatBox) return;
 
-    questions.forEach(([iconText, question]) => {
-        const button = document.createElement("button");
-        button.type = "button";
+    const messageElement = document.createElement("div");
+    messageElement.className = "message " +
+        (role === "user" ? "user-message" : "assistant-message");
 
-        const emoji = document.createElement("span");
-        emoji.textContent = iconText;
+    const bubble = document.createElement("div");
+    bubble.className = "message-content";
 
-        const text = document.createElement("span");
-        text.textContent = question;
+    // Render plain text safely instead of interpreting HTML.
+    bubble.textContent = content || "";
 
-        button.append(emoji, text);
+    messageElement.appendChild(bubble);
 
-        button.addEventListener("click", () => {
-            if (!userInput) return;
+    if (Array.isArray(sources) && sources.length > 0) {
+        const sourcesContainer = document.createElement("div");
+        sourcesContainer.className = "message-sources";
 
-            userInput.value = question;
-            userInput.focus();
+        const heading = document.createElement("p");
+        heading.textContent = "Sources";
+        sourcesContainer.appendChild(heading);
 
-            if (chatForm?.requestSubmit) {
-                chatForm.requestSubmit();
-            } else {
-                sendMessage();
+        sources.forEach(source => {
+            if (!source || !source.url) return;
+
+            try {
+                const parsedUrl = new URL(source.url);
+
+                if (!["https:", "http:"].includes(parsedUrl.protocol)) {
+                    return;
+                }
+
+                const link = document.createElement("a");
+                link.href = parsedUrl.href;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = source.title || parsedUrl.hostname;
+
+                sourcesContainer.appendChild(link);
+            } catch {
+                // Ignore invalid source URLs.
             }
         });
 
-        suggestions.appendChild(button);
-    });
+        if (sourcesContainer.querySelector("a")) {
+            messageElement.appendChild(sourcesContainer);
+        }
+    }
 
-    welcome.append(icon, heading, description, suggestions);
-    chatBox.appendChild(welcome);
+    chatBox.appendChild(messageElement);
 }
 
-function scrollToBottom() {
+function scrollChatToBottom() {
     if (chatBox) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 }
 
 // ==================================================
-// DISPLAY MESSAGES
+// TYPING INDICATOR
 // ==================================================
 
-function addMessage(text, sender, options = {}) {
-    if (!chatBox) return null;
+function showTypingIndicator() {
+    removeTypingIndicator();
 
-    const message = document.createElement("article");
-
-    message.className =
-        sender === "user"
-            ? "message user-message"
-            : "message ai-message";
-
-    const avatar = document.createElement("div");
-    avatar.className = "message-avatar";
-    avatar.textContent = sender === "user" ? "You" : "D";
-
-    const content = document.createElement("div");
-    content.className = "message-content";
-    content.textContent = String(text ?? "");
-
-    message.append(avatar, content);
-    chatBox.appendChild(message);
-
-    if (!options.noScroll) scrollToBottom();
-
-    return message;
-}
-
-// ==================================================
-// RENDER A CONVERSATION
-// ==================================================
-
-function renderConversation(conversation) {
     if (!chatBox) return;
 
-    chatBox.replaceChildren();
+    const indicator = document.createElement("div");
+    indicator.id = "diviTypingIndicator";
+    indicator.className = "message assistant-message typing-indicator";
+    indicator.textContent = "Divi AI is thinking...";
 
-    if (!conversation || !conversation.messages.length) {
-        showWelcome();
+    chatBox.appendChild(indicator);
+    scrollChatToBottom();
+}
+
+function removeTypingIndicator() {
+    const indicator = document.getElementById("diviTypingIndicator");
+
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+// ==================================================
+// SEND MESSAGES
+// ==================================================
+
+async function sendMessage(optionalText = "") {
+    if (isSending) return;
+
+    const text = (optionalText || (chatInput ? chatInput.value : "")).trim();
+
+    if (!text) {
+        showNotification("Please type a message first.");
         return;
     }
 
-    conversation.messages.forEach(message => {
-        const role = message.role === "user" ? "user" : "ai";
-
-        addMessage(message.text || "", role, { noScroll: true });
-
-        if (role === "ai" && Array.isArray(message.sources)) {
-            addSearchResults(message.sources, { noScroll: true });
-        }
-    });
-
-    scrollToBottom();
-}
-
-// ==================================================
-// CONVERSATION TITLES
-// ==================================================
-
-function makeTitle(question) {
-    const clean = String(question).trim().replace(/\s+/g, " ");
-
-    return clean.length > 35
-        ? clean.slice(0, 32) + "..."
-        : clean || "New conversation";
-}
-
-// ==================================================
-// CONVERSATION HISTORY
-// ==================================================
-
-function renderHistory() {
-    if (!chatHistory) return;
-
-    chatHistory.replaceChildren();
-
-    if (!conversations.length) {
-        const empty = document.createElement("p");
-        empty.className = "no-history";
-        empty.textContent = "Your conversations will appear here.";
-
-        chatHistory.appendChild(empty);
-        return;
+    if (!aiAppScreen || aiAppScreen.hidden) {
+        openDiviAI();
     }
 
-    [...conversations]
-        .sort((a, b) =>
-            new Date(b.updatedAt) - new Date(a.updatedAt)
-        )
-        .forEach(conversation => {
-            const row = document.createElement("div");
-            row.className = "history-row";
+    if (!currentConversationId) {
+        const conversation = createConversation();
 
-            if (conversation.id === currentConversationId) {
-                row.classList.add("selected");
-            }
-
-            const openButton = document.createElement("button");
-            openButton.type = "button";
-            openButton.className = "history-item";
-            openButton.title = conversation.title;
-
-            const icon = document.createElement("span");
-            icon.className = "history-icon";
-            icon.textContent = "💬";
-
-            const title = document.createElement("span");
-            title.className = "history-text";
-            title.textContent = conversation.title || "New conversation";
-
-            openButton.append(icon, title);
-
-            openButton.addEventListener("click", () => {
-                openConversation(conversation.id);
-            });
-
-            const deleteButton = document.createElement("button");
-            deleteButton.type = "button";
-            deleteButton.className = "delete-chat-button";
-            deleteButton.textContent = "×";
-            deleteButton.title = "Delete this conversation";
-            deleteButton.setAttribute(
-                "aria-label",
-                "Delete " + conversation.title
-            );
-
-            deleteButton.addEventListener("click", event => {
-                event.stopPropagation();
-                deleteConversation(conversation.id);
-            });
-
-            row.append(openButton, deleteButton);
-            chatHistory.appendChild(row);
-        });
-}
-
-function openConversation(id) {
-    const conversation = conversations.find(item => item.id === id);
-
-    if (!conversation) return;
-
-    currentConversationId = id;
-
-    renderConversation(conversation);
-    renderHistory();
-    showChatScreen();
-    closeMobileSidebar();
-
-    userInput?.focus();
-}
-
-function deleteConversation(id) {
-    conversations = conversations.filter(item => item.id !== id);
-
-    if (currentConversationId === id) {
-        currentConversationId = null;
+        conversations.unshift(conversation);
+        currentConversationId = conversation.id;
     }
 
-    saveConversations();
+    let conversation = getCurrentConversation();
 
-    if (currentConversationId === null) {
-        startNewChat();
-    } else {
-        renderHistory();
+    if (!conversation) {
+        conversation = createConversation();
+        conversations.unshift(conversation);
+        currentConversationId = conversation.id;
     }
-}
-
-function clearAllConversations() {
-    if (!conversations.length) {
-        showNotice("There are no saved conversations to clear.");
-        return;
-    }
-
-    if (!window.confirm(
-        "Delete all saved conversations? This cannot be undone."
-    )) {
-        return;
-    }
-
-    conversations = [];
-    currentConversationId = null;
-
-    saveConversations();
-    startNewChat();
-}
-
-function startNewChat() {
-    currentConversationId = null;
-    currentMode = "chat";
-
-    if (userInput) {
-        userInput.value = "";
-        userInput.style.height = "auto";
-    }
-
-    showWelcome();
-    showChatScreen();
-    renderHistory();
-    closeMobileSidebar();
-
-    userInput?.focus();
-}
-
-newChatButton?.addEventListener("click", startNewChat);
-clearHistoryButton?.addEventListener("click", clearAllConversations);
-
-// ==================================================
-// SAVE MESSAGES
-// ==================================================
-
-function saveConversationMessage(role, text, sources = []) {
-    const conversation = ensureCurrentConversation();
-
-    const normalizedRole = role === "user" ? "user" : "ai";
 
     conversation.messages.push({
-        role: normalizedRole,
-        text: String(text ?? ""),
-        sources: Array.isArray(sources) ? sources : [],
-        createdAt: new Date().toISOString()
+        role: "user",
+        content: text,
+        timestamp: new Date().toISOString()
     });
 
-    if (
-        normalizedRole === "user" &&
-        ["New conversation", "New chat"].includes(conversation.title)
-    ) {
-        conversation.title = makeTitle(text);
+    if (conversation.messages.length === 1) {
+        conversation.title = text.length > 42
+            ? text.slice(0, 42) + "..."
+            : text;
     }
 
     conversation.updatedAt = new Date().toISOString();
 
-    saveConversations();
+    if (chatInput) {
+        chatInput.value = "";
+        chatInput.style.height = "auto";
+    }
+
+    showChatScreen();
+    appendMessage("user", text);
     renderHistory();
     updateChatHeader();
+
+    saveConversations();
+
+    isSending = true;
+    setSendButtonState(true);
+    showTypingIndicator();
+
+    try {
+        const result = await requestAIResponse(text);
+
+        removeTypingIndicator();
+
+        conversation = getCurrentConversation();
+
+        if (!conversation) return;
+
+        conversation.messages.push({
+            role: "assistant",
+            content: result.answer,
+            sources: result.sources || [],
+            timestamp: new Date().toISOString()
+        });
+
+        conversation.updatedAt = new Date().toISOString();
+
+        appendMessage(
+            "assistant",
+            result.answer,
+            result.sources || []
+        );
+
+        saveConversations();
+        renderHistory();
+        updateChatHeader();
+        scrollChatToBottom();
+    } catch (error) {
+        console.error("Divi AI request failed:", error);
+
+        removeTypingIndicator();
+
+        const message =
+            "Sorry, I couldn't get a response right now. Please check your internet connection and try again.";
+
+        conversation = getCurrentConversation();
+
+        if (conversation) {
+            conversation.messages.push({
+                role: "assistant",
+                content: message,
+                timestamp: new Date().toISOString()
+            });
+
+            saveConversations();
+        }
+
+        appendMessage("assistant", message);
+        showNotification("Could not connect to Divi AI.");
+    } finally {
+        isSending = false;
+        setSendButtonState(false);
+        if (chatInput) chatInput.focus();
+    }
+}
+
+function setSendButtonState(disabled) {
+    if (!sendButton) return;
+
+    sendButton.disabled = disabled;
+    sendButton.setAttribute("aria-busy", String(disabled));
 }
 
 // ==================================================
-// SEARCH RESULTS
+// REQUEST AI / WEB SEARCH
 // ==================================================
 
-function getValidSearchResults(results) {
-    if (!Array.isArray(results)) return [];
+async function requestAIResponse(question) {
+    const response = await fetch(SEARCH_API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+            query: question,
+            question: question,
+            search_query: question
+        })
+    });
 
-    return results.filter(result => {
-        if (!result || typeof result.url !== "string") return false;
+    let data;
 
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data.error ||
+            data.message ||
+            "The server returned status " + response.status
+        );
+    }
+
+    const answer =
+        data.answer ||
+        data.response ||
+        data.result ||
+        data.summary ||
+        data.content ||
+        data.message;
+
+    const sources = normalizeSources(
+        data.sources || data.results || data.data || []
+    );
+
+    if (answer && typeof answer === "string") {
+        return {
+            answer: answer,
+            sources: sources
+        };
+    }
+
+    if (sources.length > 0) {
+        return {
+            answer: "Here are some useful results I found for your question.",
+            sources: sources
+        };
+    }
+
+    return {
+        answer: "The server responded, but it did not provide an answer. Please try rephrasing your question.",
+        sources: []
+    };
+}
+
+function normalizeSources(rawSources) {
+    if (!Array.isArray(rawSources)) return [];
+
+    return rawSources.map(source => {
+        if (typeof source === "string") {
+            return {
+                title: source,
+                url: source
+            };
+        }
+
+        return {
+            title:
+                source.title ||
+                source.name ||
+                source.url ||
+                "Source",
+            url:
+                source.url ||
+                source.link ||
+                source.href ||
+                ""
+        };
+    }).filter(source => {
         try {
-            const url = new URL(result.url);
-
-            return url.protocol === "https:" || url.protocol === "http:";
+            const parsedUrl = new URL(source.url);
+            return ["https:", "http:"].includes(parsedUrl.protocol);
         } catch {
             return false;
         }
     });
 }
 
-function addSearchResults(results, options = {}) {
-    if (!chatBox) return;
+// ==================================================
+// SEND BUTTON AND ENTER KEY
+// ==================================================
 
-    const validResults = getValidSearchResults(results);
-
-    if (!validResults.length) return;
-
-    const container = document.createElement("div");
-    container.className = "message ai-message search-results";
-
-    const heading = document.createElement("h3");
-    heading.textContent = "Sources";
-    container.appendChild(heading);
-
-    validResults.slice(0, 5).forEach(result => {
-        const link = document.createElement("a");
-        const url = new URL(result.url);
-
-        link.href = url.href;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.className = "search-result-link";
-        link.textContent = result.title || url.hostname;
-
-        container.appendChild(link);
+if (sendButton) {
+    sendButton.addEventListener("click", () => {
+        sendMessage();
     });
-
-    chatBox.appendChild(container);
-
-    if (!options.noScroll) scrollToBottom();
 }
 
-// ==================================================
-// LOADING INDICATOR
-// ==================================================
-
-function showLoading() {
-    if (!chatBox) return null;
-
-    const loading = document.createElement("article");
-    loading.className = "message ai-message loading-message";
-    loading.id = "diviLoading";
-
-    const avatar = document.createElement("div");
-    avatar.className = "message-avatar";
-    avatar.textContent = "D";
-
-    const text = document.createElement("div");
-    text.className = "message-content";
-    text.textContent = "Divi AI is searching for an answer...";
-
-    loading.append(avatar, text);
-    chatBox.appendChild(loading);
-
-    scrollToBottom();
-
-    return loading;
-}
-
-// ==================================================
-// EXTRACT ANSWER
-// ==================================================
-
-function extractAnswer(data) {
-    if (!data || typeof data !== "object") return "";
-
-    const directAnswer =
-        data.answer ??
-        data.response ??
-        data.summary ??
-        data.result ??
-        data.message;
-
-    if (typeof directAnswer === "string" && directAnswer.trim()) {
-        return directAnswer.trim();
-    }
-
-    if (directAnswer !== undefined && directAnswer !== null) {
-        try {
-            return JSON.stringify(directAnswer, null, 2);
-        } catch {
-            // Use search results below.
-        }
-    }
-
-    const results = getValidSearchResults(
-        data.results || data.sources || []
-    );
-
-    return results.slice(0, 3).map((item, index) => {
-        const title = item.title || "Search result";
-        const content = item.content || item.snippet || item.description || "";
-
-        return content
-            ? `${index + 1}. ${title}\n${content}`
-            : `${index + 1}. ${title}`;
-    }).join("\n\n");
-}
-
-// ==================================================
-// SEND QUESTION TO BACKEND
-// ==================================================
-
-async function sendMessage() {
-    if (!userInput || isSending) return;
-
-    const question = userInput.value.trim();
-
-    if (!question) return;
-
-    if (!chatBox) {
-        showNotice("The chat window could not be found. Check index.html.");
-        return;
-    }
-
-    isSending = true;
-
-    if (sendButton) sendButton.disabled = true;
-
-    if (chatBox.querySelector(".welcome")) {
-        chatBox.replaceChildren();
-    }
-
-    userInput.value = "";
-    userInput.style.height = "auto";
-
-    addMessage(question, "user");
-    saveConversationMessage("user", question);
-
-    const loading = showLoading();
-
-    try {
-        let query = question;
-
-        if (currentMode === "agent") {
-            query = "Help plan this task in practical steps: " + question;
-        } else if (currentMode === "explain") {
-            query = "Explain this in simple language and give examples: " + question;
-        }
-
-        const response = await fetch(SEARCH_API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({ query })
-        });
-
-        const rawResponse = await response.text();
-
-        let data = {};
-
-        try {
-            data = rawResponse ? JSON.parse(rawResponse) : {};
-        } catch {
-            throw new Error(
-                "The server did not return valid JSON. Check your Render backend."
-            );
-        }
-
-        if (!response.ok) {
-            const serverError =
-                data.error || data.message || data.detail || "";
-
-            if (response.status === 404) {
-                throw new Error("The /api/web-search endpoint was not found.");
-            }
-
-            if (response.status === 401 || response.status === 403) {
-                throw new Error(
-                    "The server denied the request. Check backend settings."
-                );
-            }
-
-            throw new Error(
-                serverError ||
-                `The server returned HTTP ${response.status}.`
-            );
-        }
-
-        const answer = extractAnswer(data);
-
-        if (!answer) {
-            throw new Error(
-                "The backend returned no answer or search results. Check Tavily settings."
-            );
-        }
-
-        const sources = getValidSearchResults(
-            data.results || data.sources || []
-        );
-
-        loading?.remove();
-
-        addMessage(answer, "ai");
-        saveConversationMessage("ai", answer, sources);
-        addSearchResults(sources);
-
-    } catch (error) {
-        console.error("Divi AI request failed:", error);
-
-        loading?.remove();
-
-        let errorText = "Sorry, I couldn't get an answer. ";
-
-        if (error instanceof TypeError) {
-            errorText +=
-                "I couldn't connect to the backend. Check your internet, Render deployment, and CORS settings.";
-        } else {
-            errorText += error.message || "Please try again.";
-        }
-
-        addMessage(errorText, "ai");
-        saveConversationMessage("ai", errorText);
-
-    } finally {
-        isSending = false;
-
-        if (sendButton) sendButton.disabled = false;
-
-        userInput?.focus();
-    }
-}
-
-// ==================================================
-// CHAT INPUT
-// ==================================================
-
-chatForm?.addEventListener("submit", event => {
-    event.preventDefault();
-    sendMessage();
-});
-
-if (userInput) {
-    userInput.addEventListener("input", () => {
-        userInput.style.height = "auto";
-        userInput.style.height =
-            Math.min(userInput.scrollHeight, 180) + "px";
-    });
-
-    userInput.addEventListener("keydown", event => {
+if (chatInput) {
+    chatInput.addEventListener("keydown", event => {
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-
-            if (chatForm?.requestSubmit) {
-                chatForm.requestSubmit();
-            } else {
-                sendMessage();
-            }
+            sendMessage();
         }
+    });
+
+    chatInput.addEventListener("input", () => {
+        chatInput.style.height = "auto";
+        chatInput.style.height =
+            Math.min(chatInput.scrollHeight, 180) + "px";
     });
 }
 
-// ==================================================
-// MOBILE SIDEBAR
-// ==================================================
+// Support alternative button IDs used by different HTML layouts.
+[
+    "sendBtn",
+    "sendMessageButton",
+    "chatSendButton"
+].forEach(id => {
+    const button = document.getElementById(id);
 
-function closeMobileSidebar() {
-    if (window.innerWidth <= 760 && sidebar) {
-        sidebar.classList.remove("sidebar-open");
+    if (button && button !== sendButton) {
+        button.addEventListener("click", () => sendMessage());
     }
-}
+});
 
-sidebarToggle?.addEventListener("click", () => {
-    sidebar?.classList.toggle("sidebar-open");
+// ==================================================
+// SUGGESTED PROMPTS
+// ==================================================
+
+document.querySelectorAll(
+    "[data-prompt], .suggestion-card, .prompt-suggestion"
+).forEach(button => {
+    button.addEventListener("click", () => {
+        const prompt =
+            button.dataset.prompt ||
+            button.textContent.trim();
+
+        if (!prompt) return;
+
+        if (chatInput) {
+            chatInput.value = prompt;
+        }
+
+        sendMessage(prompt);
+    });
 });
 
 // ==================================================
 // VOICE INPUT
 // ==================================================
 
-if (voiceButton && userInput) {
+function setupVoiceInput() {
+    if (!voiceButton) return;
+
     const SpeechRecognition =
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-
-        recognition.lang = "en-US";
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
+    if (!SpeechRecognition) {
         voiceButton.addEventListener("click", () => {
-            try {
-                recognition.start();
-                voiceButton.textContent = "…";
-                voiceButton.disabled = true;
-            } catch (error) {
-                console.warn("Voice input could not start:", error);
-                showNotice("Voice input could not start. Try again.");
-            }
+            showNotification(
+                "Voice input is not supported by this browser. Try Chrome."
+            );
         });
 
-        recognition.onresult = event => {
-            const result = event.results?.[0]?.[0];
-
-            if (result) {
-                userInput.value = result.transcript;
-                userInput.dispatchEvent(new Event("input"));
-                userInput.focus();
-            }
-        };
-
-        recognition.onerror = event => {
-            console.warn("Voice input error:", event.error);
-            showNotice("Voice recognition failed. Please try again.");
-        };
-
-        recognition.onend = () => {
-            voiceButton.textContent = "🎤";
-            voiceButton.disabled = false;
-        };
-    } else {
-        voiceButton.addEventListener("click", () => {
-            showNotice("Voice input is not supported in this browser.");
-        });
+        return;
     }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+        voiceButton.classList.add("recording");
+        voiceButton.setAttribute("aria-pressed", "true");
+        showNotification("Listening...");
+    };
+
+    recognition.onresult = event => {
+        const transcript = event.results[0][0].transcript;
+
+        if (chatInput) {
+            chatInput.value = transcript;
+            chatInput.focus();
+        }
+    };
+
+    recognition.onerror = event => {
+        console.error("Voice recognition error:", event.error);
+        showNotification("Voice input could not be completed.");
+    };
+
+    recognition.onend = () => {
+        voiceButton.classList.remove("recording");
+        voiceButton.setAttribute("aria-pressed", "false");
+    };
+
+    voiceButton.addEventListener("click", () => {
+        try {
+            recognition.start();
+        } catch (error) {
+            console.warn("Voice recognition could not start:", error);
+        }
+    });
 }
 
+setupVoiceInput();
+
 // ==================================================
-// CHAT MODES
+// MOBILE SIDEBAR
 // ==================================================
 
-function setMode(mode) {
-    const allowedModes = ["chat", "agent", "explain"];
+function closeMobileSidebar() {
+    if (sidebar) {
+        sidebar.classList.remove("sidebar-open");
+    }
 
-    currentMode = allowedModes.includes(mode) ? mode : "chat";
+    document.body.classList.remove("sidebar-open");
 }
+
+function toggleMobileSidebar() {
+    if (!sidebar) return;
+
+    sidebar.classList.toggle("sidebar-open");
+    document.body.classList.toggle(
+        "sidebar-open",
+        sidebar.classList.contains("sidebar-open")
+    );
+}
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", toggleMobileSidebar);
+}
+
+document.querySelectorAll(
+    ".mobile-menu-button, [data-toggle-sidebar]"
+).forEach(button => {
+    button.addEventListener("click", toggleMobileSidebar);
+});
 
 // ==================================================
 // NOTIFICATIONS
 // ==================================================
 
-function showNotice(message) {
-    const notice = document.createElement("div");
+function showNotification(message) {
+    let notification = document.getElementById("diviNotification");
 
-    notice.className = "divi-notice";
-    notice.setAttribute("role", "status");
-    notice.textContent = message;
+    if (!notification) {
+        notification = document.createElement("div");
+        notification.id = "diviNotification";
+        notification.className = "divi-notification";
 
-    document.body.appendChild(notice);
+        Object.assign(notification.style, {
+            position: "fixed",
+            bottom: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: "99999",
+            maxWidth: "90%",
+            padding: "12px 18px",
+            borderRadius: "12px",
+            background: "#17365d",
+            color: "#ffffff",
+            boxShadow: "0 6px 24px rgba(0,0,0,0.2)",
+            fontSize: "14px",
+            textAlign: "center"
+        });
 
-    window.setTimeout(() => notice.remove(), 4500);
+        document.body.appendChild(notification);
+    }
+
+    notification.textContent = message;
+    notification.hidden = false;
+
+    clearTimeout(notification._hideTimer);
+
+    notification._hideTimer = setTimeout(() => {
+        notification.hidden = true;
+    }, 3500);
 }
 
 // ==================================================
-// INITIALIZE CHAT ONLY WHEN OPENED
-// ==================================================
-
-function initializeDiviChat() {
-    if (chatInitialized) return;
-
-    chatInitialized = true;
-
-    renderHistory();
-
-    // Start a new conversation without deleting old ones.
-    currentConversationId = null;
-    showWelcome();
-    showChatScreen();
-
-    console.log("Divi AI chat is ready:", SEARCH_API_URL);
-}
-
-window.initializeDiviChat = initializeDiviChat;
-
-// ==================================================
-// INITIAL PAGE SETUP
+// STARTUP
 // ==================================================
 
 function initializeDiviAI() {
+    // The website starts on the homepage.
+    if (homePage) {
+        homePage.hidden = false;
+    }
+
+    if (aiAppScreen) {
+        aiAppScreen.hidden = true;
+    }
+
+    document.body.classList.remove("chat-app");
+
+    // Open the correct homepage tab when a supported hash is present.
+    const requestedPage =
+        hashToPage[window.location.hash.toLowerCase()] || "homeHero";
+
+    showSitePage(requestedPage, false);
+
+    // Ensure the history display is ready when the app opens.
     renderHistory();
 
-    // Start on the homepage, not inside the chat.
-    if (homePage && aiAppScreen) {
-        homePage.hidden = false;
-        aiAppScreen.hidden = true;
-        document.body.classList.remove("chat-app");
-    } else {
-        // Fallback in case the homepage markup is not present.
-        if (aiAppScreen) aiAppScreen.hidden = false;
-        initializeDiviChat();
-    }
-
-    const year = document.getElementById("copyrightYear");
-
-    if (year) {
-        year.textContent = new Date().getFullYear();
-    }
-
-    console.log("Divi AI homepage is ready.");
+    console.log("Divi AI JavaScript loaded successfully.");
 }
 
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeDiviAI);
-} else {
-    initializeDiviAI();
-}
+initializeDiviAI();
 ```
