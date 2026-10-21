@@ -68,6 +68,9 @@ button:disabled {
     display: none !important;
 }
 
+#aiAppScreen:not([hidden]) {
+    display: flex;
+}
 /* ==========================================
    HOMEPAGE CONTAINER
 ========================================== */
