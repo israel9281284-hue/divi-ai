@@ -177,7 +177,7 @@
 async function authRequest(endpoint, payload = {}) {
     const isStatusCheck = endpoint === "/auth/status";
 
-    const response = await fetch(`${AUTH_API}${endpoint}`, {
+    const response = await fetch(`{AUTH_API}${endpoint}`, {
         method: isStatusCheck ? "GET" : "POST",
         credentials: "include",
         headers: {
