@@ -1,7 +1,13 @@
+```javascript
 "use strict";
 
 (() => {
+    /* ==========================================
+       CONFIGURATION
+    ========================================== */
+
     const API_URL = "https://divi-ai.onrender.com/api/web-search";
+    const AUTH_API = "https://divi-ai.onrender.com/api";
     const STORAGE_KEY = "diviAIConversations_v2";
     const MAX_CHATS = 50;
 
@@ -9,6 +15,11 @@
     let currentChatId = null;
     let sending = false;
     let recognition = null;
+
+    let authLoggedIn = false;
+    let authUsername = "";
+    let authStatusChecked = false;
+    let authStatusPromise = null;
 
     const $ = (selector, root = document) =>
         root.querySelector(selector);
@@ -81,21 +92,474 @@
             }
         });
 
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
     }
 
-    function openDiviAI() {
+    /* ==========================================
+       AUTHENTICATION
+    ========================================== */
+
+    function authMessage(formId, message, isError = false) {
+        const messageId = formId === "loginForm"
+            ? "loginMessage"
+            : "registerMessage";
+
+        const element = document.getElementById(messageId);
+
+        if (element) {
+            element.textContent = message;
+            element.style.color = isError ? "#dc2626" : "#15803d";
+        } else if (message) {
+            notify(message);
+        }
+    }
+
+    function setAuthMode(mode) {
+        const loginForm = $("#loginForm");
+        const registerForm = $("#registerForm");
+        const title = $("#authTitle");
+        const description = $("#authDescription");
+        const switchText = $("#authSwitchText");
+        const switchButton = $("#authSwitchButton");
+
+        const registering = mode === "register";
+
+        if (loginForm) loginForm.hidden = registering;
+        if (registerForm) registerForm.hidden = !registering;
+
+        if (title) {
+            title.textContent = registering
+                ? "Create your account"
+                : "Welcome back";
+        }
+
+        if (description) {
+            description.textContent = registering
+                ? "Create an account to start using Divi AI."
+                : "Log in to your Divi AI account.";
+        }
+
+        if (switchText) {
+            switchText.textContent = registering
+                ? "Already have an account?"
+                : "New to Divi AI?";
+        }
+
+        if (switchButton) {
+            switchButton.textContent = registering
+                ? "Log in"
+                : "Create an account";
+
+            switchButton.dataset.authOpen = registering
+                ? "login"
+                : "register";
+        }
+
+        authMessage("loginForm", "");
+        authMessage("registerForm", "");
+    }
+
+    function openAuthScreen(mode = "login") {
         const home = $("#homePage");
         const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
 
-        if (!app) {
-            notify("Chat screen not found. Please check your HTML.");
+        if (!authScreen) {
+            notify("Login screen not found. Check your index.html.");
             return;
         }
 
         if (home) {
             home.hidden = true;
             home.style.display = "none";
+        }
+
+        if (app) {
+            app.hidden = true;
+            app.style.display = "none";
+        }
+
+        authScreen.hidden = false;
+        authScreen.style.display = "flex";
+
+        document.body.classList.remove("chat-app");
+
+        setAuthMode(mode);
+    }
+
+    function closeAuthScreen() {
+        const authScreen = $("#authScreen");
+        const home = $("#homePage");
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
+        }
+
+        if (home) {
+            home.hidden = false;
+            home.style.display = "";
+        }
+
+        document.body.classList.remove("chat-app");
+        showPage("homeHero");
+    }
+
+    async function authRequest(endpoint, payload = {}) {
+        const response = await fetch(`${AUTH_API}${endpoint}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const text = await response.text();
+
+        let data = {};
+
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch {
+            data = { message: text };
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                data.detail ||
+                `Request failed (${response.status}).`
+            );
+        }
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        return data;
+    }
+
+    async function checkAuthStatus() {
+        if (authStatusChecked) {
+            return authLoggedIn;
+        }
+
+        if (authStatusPromise) {
+            return authStatusPromise;
+        }
+
+        authStatusPromise = (async () => {
+            try {
+                const response = await fetch(
+                    `${AUTH_API}/auth/status`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Authentication check failed (${response.status}).`
+                    );
+                }
+
+                const data = await response.json();
+
+                authLoggedIn = Boolean(
+                    data.logged_in ??
+                    data.authenticated ??
+                    data.is_logged_in ??
+                    data.loggedIn
+                );
+
+                authUsername = data.username || "";
+
+                authStatusChecked = true;
+
+                updateAuthUI();
+
+                return authLoggedIn;
+            } catch (error) {
+                console.error("Could not check login status:", error);
+
+                authLoggedIn = false;
+                authUsername = "";
+                authStatusChecked = false;
+
+                return false;
+            } finally {
+                authStatusPromise = null;
+            }
+        })();
+
+        return authStatusPromise;
+    }
+
+    function updateAuthUI() {
+        const usernameElements = $$("[data-auth-username]");
+
+        usernameElements.forEach(element => {
+            element.textContent = authUsername || "User";
+        });
+
+        $$("[data-auth-logged-in]").forEach(element => {
+            element.hidden = !authLoggedIn;
+        });
+
+        $$("[data-auth-logged-out]").forEach(element => {
+            element.hidden = authLoggedIn;
+        });
+
+        const logoutButton = $("#logoutButton");
+
+        if (logoutButton) {
+            logoutButton.hidden = !authLoggedIn;
+        }
+    }
+
+    function setupAuth() {
+        $$("[data-auth-open]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.preventDefault();
+
+                const mode = button.dataset.authOpen || "login";
+
+                openAuthScreen(mode);
+            });
+        });
+
+        $$("[data-auth-close]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.preventDefault();
+                closeAuthScreen();
+            });
+        });
+
+        const switchButton = $("#authSwitchButton");
+
+        if (switchButton) {
+            switchButton.addEventListener("click", () => {
+                const mode = switchButton.dataset.authOpen || "register";
+                setAuthMode(mode);
+            });
+        }
+
+        const loginForm = $("#loginForm");
+
+        if (loginForm) {
+            loginForm.addEventListener("submit", async event => {
+                event.preventDefault();
+
+                const identifier = $("#loginIdentifier")?.value.trim();
+                const password = $("#loginPassword")?.value;
+
+                if (!identifier || !password) {
+                    authMessage(
+                        "loginForm",
+                        "Enter your username and password.",
+                        true
+                    );
+                    return;
+                }
+
+                const submitButton = $(
+                    'button[type="submit"]',
+                    loginForm
+                );
+
+                if (submitButton) submitButton.disabled = true;
+
+                authMessage("loginForm", "Logging in...");
+
+                try {
+                    const data = await authRequest("/login", {
+                        username: identifier,
+                        identifier: identifier,
+                        password: password
+                    });
+
+                    authLoggedIn = true;
+                    authUsername = data.username || identifier;
+                    authStatusChecked = true;
+
+                    updateAuthUI();
+
+                    loginForm.reset();
+
+                    notify("Login successful!");
+
+                    await openDiviAI();
+                } catch (error) {
+                    authMessage(
+                        "loginForm",
+                        error.message || "Login failed.",
+                        true
+                    );
+                } finally {
+                    if (submitButton) submitButton.disabled = false;
+                }
+            });
+        }
+
+        const registerForm = $("#registerForm");
+
+        if (registerForm) {
+            registerForm.addEventListener("submit", async event => {
+                event.preventDefault();
+
+                const username = $("#registerUsername")?.value.trim();
+                const email = $("#registerEmail")?.value.trim();
+                const password = $("#registerPassword")?.value;
+
+                if (!username || !password) {
+                    authMessage(
+                        "registerForm",
+                        "Enter a username and password.",
+                        true
+                    );
+                    return;
+                }
+
+                if (username.length < 3) {
+                    authMessage(
+                        "registerForm",
+                        "Your username must be at least 3 characters.",
+                        true
+                    );
+                    return;
+                }
+
+                if (password.length < 8) {
+                    authMessage(
+                        "registerForm",
+                        "Your password must be at least 8 characters.",
+                        true
+                    );
+                    return;
+                }
+
+                const submitButton = $(
+                    'button[type="submit"]',
+                    registerForm
+                );
+
+                if (submitButton) submitButton.disabled = true;
+
+                authMessage("registerForm", "Creating your account...");
+
+                try {
+                    /*
+                     * The current backend accepts username and password.
+                     * Email is not sent because the existing users table
+                     * may not contain an email column.
+                     */
+                    const data = await authRequest("/register", {
+                        username,
+                        password
+                    });
+
+                    registerForm.reset();
+
+                    /*
+                     * Some backends log users in automatically after
+                     * registration. Others require a separate login.
+                     */
+                    authLoggedIn = false;
+                    authUsername = "";
+                    authStatusChecked = false;
+
+                    authMessage(
+                        "registerForm",
+                        data.message ||
+                        "Account created! Please log in."
+                    );
+
+                    setAuthMode("login");
+
+                    const loginIdentifier = $("#loginIdentifier");
+                    if (loginIdentifier) {
+                        loginIdentifier.value = username;
+                    }
+
+                    notify("Account created. Please log in.");
+                } catch (error) {
+                    authMessage(
+                        "registerForm",
+                        error.message || "Registration failed.",
+                        true
+                    );
+                } finally {
+                    if (submitButton) submitButton.disabled = false;
+                }
+            });
+        }
+
+        const logoutButton = $("#logoutButton");
+
+        if (logoutButton) {
+            logoutButton.addEventListener("click", async () => {
+                try {
+                    await authRequest("/logout");
+
+                    authLoggedIn = false;
+                    authUsername = "";
+                    authStatusChecked = true;
+
+                    updateAuthUI();
+
+                    notify("You have logged out.");
+
+                    openAuthScreen("login");
+                } catch (error) {
+                    notify("Logout failed: " + error.message);
+                }
+            });
+        }
+
+        checkAuthStatus();
+    }
+
+    /* ==========================================
+       OPEN CHAT APPLICATION
+    ========================================== */
+
+    async function openDiviAI() {
+        const home = $("#homePage");
+        const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
+
+        if (!app) {
+            notify("Chat screen not found. Check your index.html.");
+            return;
+        }
+
+        if (authScreen) {
+            const loggedIn = await checkAuthStatus();
+
+            if (!loggedIn) {
+                openAuthScreen("login");
+                return;
+            }
+        }
+
+        if (home) {
+            home.hidden = true;
+            home.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
         }
 
         app.hidden = false;
@@ -122,10 +586,16 @@
     function returnToHome() {
         const home = $("#homePage");
         const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
 
         if (app) {
             app.hidden = true;
             app.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
         }
 
         if (home) {
@@ -321,7 +791,7 @@
             const selectButton = document.createElement("button");
             selectButton.type = "button";
             selectButton.className = "history-item";
-            selectButton.title = chat.title;
+            selectButton.title = chat.title || "New chat";
 
             const icon = document.createElement("span");
             icon.className = "history-icon";
@@ -445,52 +915,52 @@
     }
 
     function showLoading() {
-    const box = $("#chatBox");
+        const box = $("#chatBox");
 
-    if (!box) return null;
+        if (!box) return null;
 
-    const row = document.createElement("div");
-    row.className = "message ai-message loading-message";
-    row.setAttribute("role", "status");
-    row.setAttribute("aria-label", "Divi AI is thinking");
+        const row = document.createElement("div");
+        row.className = "message ai-message loading-message";
+        row.setAttribute("role", "status");
+        row.setAttribute("aria-label", "Divi AI is thinking");
 
-    const avatar = document.createElement("div");
-    avatar.className = "message-avatar";
-    avatar.textContent = "D";
+        const avatar = document.createElement("div");
+        avatar.className = "message-avatar";
+        avatar.textContent = "D";
 
-    const content = document.createElement("div");
-    content.className = "message-content loading-content";
+        const content = document.createElement("div");
+        content.className = "message-content loading-content";
 
-    const label = document.createElement("span");
-    label.className = "loading-label";
-    label.textContent = "Divi AI is thinking";
+        const label = document.createElement("span");
+        label.className = "loading-label";
+        label.textContent = "Divi AI is thinking";
 
-    const dots = document.createElement("span");
-    dots.className = "loading-dots";
-    dots.setAttribute("aria-hidden", "true");
+        const dots = document.createElement("span");
+        dots.className = "loading-dots";
+        dots.setAttribute("aria-hidden", "true");
 
-    for (let i = 0; i < 3; i++) {
-        const dot = document.createElement("span");
-        dot.className = "loading-dot";
-        dots.appendChild(dot);
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement("span");
+            dot.className = "loading-dot";
+            dots.appendChild(dot);
+        }
+
+        content.append(label, dots);
+        row.append(avatar, content);
+        box.appendChild(row);
+
+        box.scrollTop = box.scrollHeight;
+
+        return row;
     }
 
-    content.append(label, dots);
-    row.append(avatar, content);
-    box.appendChild(row);
-
-    box.scrollTop = box.scrollHeight;
-
-    return row;
-}
     /* ==========================================
-       SEND MESSAGE TO YOUR BACKEND
+       SEND MESSAGE TO BACKEND
     ========================================== */
 
-        async function askBackend(question) {
+    async function askBackend(question) {
         const chat = getChat(currentChatId);
 
-        // Get the previous messages in this conversation.
         const history = (chat?.messages || [])
             .slice(-12)
             .map(message => ({
@@ -507,14 +977,15 @@
             },
             body: JSON.stringify({
                 query: question,
-                question: question,
+                question,
                 search_query: question,
-                history: history,
+                history,
                 messages: history
             })
         });
 
         const text = await response.text();
+
         let data;
 
         try {
@@ -555,6 +1026,7 @@
             "The backend did not return an answer. Check its response format."
         );
     }
+
     async function sendMessage(text) {
         const question = String(text || "").trim();
 
@@ -600,7 +1072,7 @@
                 "I couldn't get an answer from the server.\n\n" +
                 error.message +
                 "\n\nPlease check that the backend endpoint /api/web-search " +
-                "is working and that its API key is configured."
+                "is working and its API key is configured."
             );
         } finally {
             sending = false;
@@ -696,17 +1168,6 @@
         $$("[data-suggestion]").forEach(button => {
             button.addEventListener("click", () => {
                 sendMessage(button.dataset.suggestion);
-            });
-        });
-
-        // Matches the three suggestion buttons in your supplied HTML.
-        $$(".suggestions button").forEach(button => {
-            button.addEventListener("click", () => {
-                const suggestion = button.dataset.suggestion;
-
-                if (suggestion) {
-                    sendMessage(suggestion);
-                }
             });
         });
     }
@@ -828,13 +1289,16 @@
 
     function init() {
         loadChats();
+
         setupNavigation();
         setupChat();
         setupChatButtons();
         setupVoice();
+        setupAuth();
 
         const home = $("#homePage");
         const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
 
         if (home) {
             home.hidden = false;
@@ -844,6 +1308,11 @@
         if (app) {
             app.hidden = true;
             app.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
         }
 
         document.body.classList.remove("chat-app");
@@ -862,7 +1331,9 @@
         renderMessages();
         showPage("homeHero");
 
-        console.log("Divi AI loaded. Navigation and chat buttons initialized.");
+        console.log(
+            "Divi AI loaded: chat, navigation, voice, and authentication initialized."
+        );
     }
 
     if (document.readyState === "loading") {
@@ -871,3 +1342,4 @@
         init();
     }
 })();
+```
