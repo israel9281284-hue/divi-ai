@@ -577,7 +577,7 @@
                         password: password
                     });
 
-                   ```javascript
+                   
 authLoggedIn = true;
 authUsername = data.username || identifier;
 authStatusChecked = true;
@@ -769,7 +769,7 @@ if (app) {
        OPEN CHAT APPLICATION
     ========================================== */
 
-    ```javascript
+    
 async function openDiviAI() {
     const home = document.getElementById("homePage");
     const app = document.getElementById("aiAppScreen");
