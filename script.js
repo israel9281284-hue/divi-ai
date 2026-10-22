@@ -1,6 +1,6 @@
 "use strict";
 
-(() => {
+;(() => {
     /* ==========================================
        CONFIGURATION
     ========================================== */
@@ -1651,6 +1651,5 @@
     }
 
     // Allow HTML buttons to open Divi AI.
-    window.openDiviAI = openDiviAI;
-
+   window.openDiviAI = openDiviAI;
 })();
