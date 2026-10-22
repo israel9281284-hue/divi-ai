@@ -1,10 +1,6 @@
 "use strict";
 
 (() => {
-    /* ==========================================
-       CONFIGURATION
-    ========================================== */
-
     const API_URL = "https://divi-ai.onrender.com/api/web-search";
     const AUTH_API = "https://divi-ai.onrender.com/api";
     const STORAGE_KEY = "diviAIConversations_v2";
@@ -14,25 +10,16 @@
     let currentChatId = null;
     let sending = false;
     let recognition = null;
-
     let authLoggedIn = false;
     let authUsername = "";
     let authStatusChecked = false;
     let authStatusPromise = null;
 
-    const $ = (selector, root = document) =>
-        root.querySelector(selector);
-
-    const $$ = (selector, root = document) =>
-        Array.from(root.querySelectorAll(selector));
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
     const createId = () =>
-        Date.now().toString(36) +
-        Math.random().toString(36).slice(2, 9);
-
-    /* ==========================================
-       NOTIFICATIONS
-    ========================================== */
+        Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
 
     function notify(message) {
         let notice = $("#diviNotice");
@@ -47,7 +34,6 @@
 
         notice.textContent = message;
         notice.hidden = false;
-
         clearTimeout(notify.timer);
 
         notify.timer = setTimeout(() => {
@@ -55,33 +41,20 @@
         }, 3500);
     }
 
-    /* ==========================================
-       HOMEPAGE NAVIGATION
-    ========================================== */
+    /* HOMEPAGE NAVIGATION */
 
     function showPage(pageId) {
-        const pageIds = [
-            "homeHero",
-            "homeFeatures",
-            "homeAbout",
-            "homeContact"
-        ];
+        const pageIds = ["homeHero", "homeFeatures", "homeAbout", "homeContact"];
 
-        if (!pageIds.includes(pageId)) {
-            pageId = "homeHero";
-        }
+        if (!pageIds.includes(pageId)) pageId = "homeHero";
 
         pageIds.forEach(id => {
             const page = document.getElementById(id);
-
-            if (page) {
-                page.hidden = id !== pageId;
-            }
+            if (page) page.hidden = id !== pageId;
         });
 
         $$(".nav-tab").forEach(button => {
             const active = button.dataset.page === pageId;
-
             button.classList.toggle("active", active);
 
             if (active) {
@@ -91,15 +64,10 @@
             }
         });
 
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    /* ==========================================
-       AUTHENTICATION
-    ========================================== */
+    /* AUTHENTICATION */
 
     function authMessage(formId, message, isError = false) {
         const messageId = formId === "loginForm"
@@ -123,7 +91,6 @@
         const description = $("#authDescription");
         const switchText = $("#authSwitchText");
         const switchButton = $("#authSwitchButton");
-
         const registering = mode === "register";
 
         if (loginForm) loginForm.hidden = registering;
@@ -185,7 +152,6 @@
         authScreen.style.display = "flex";
 
         document.body.classList.remove("chat-app");
-
         setAuthMode(mode);
     }
 
@@ -207,67 +173,51 @@
         showPage("homeHero");
     }
 
-    ```javascript
-async function authRequest(endpoint, payload = {}) {
-    const response = await fetch(`${AUTH_API}${endpoint}`, {
-        method: endpoint === "/auth/status" ? "GET" : "POST",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        },
-        ...(endpoint === "/auth/status"
-            ? {}
-            : { body: JSON.stringify(payload) })
-    });
+    async function authRequest(endpoint, payload = {}) {
+        const response = await fetch(`${AUTH_API}${endpoint}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
 
-    const text = await response.text();
+        const text = await response.text();
+        let data = {};
 
-    let data = {};
-
-    try {
-        data = text ? JSON.parse(text) : {};
-    } catch {
-        data = { message: text };
-    }
-
-    if (!response.ok) {
-        throw new Error(
-            data.error ||
-            data.message ||
-            data.detail ||
-            `Request failed (${response.status}).`
-        );
-    }
-
-    if (data.error) {
-        throw new Error(data.error);
-    }
-
-    return data;
-}
-```
-    async function checkAuthStatus() {
-        if (authStatusChecked) {
-            return authLoggedIn;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (error) {
+            data = { message: text };
         }
 
-        if (authStatusPromise) {
-            return authStatusPromise;
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                data.detail ||
+                `Request failed (${response.status}).`
+            );
         }
+
+        if (data.error) throw new Error(data.error);
+
+        return data;
+    }
+
+    async function checkAuthStatus(force = false) {
+        if (authStatusChecked && !force) return authLoggedIn;
+        if (authStatusPromise) return authStatusPromise;
 
         authStatusPromise = (async () => {
             try {
-                const response = await fetch(
-                    `${AUTH_API}/auth/status`,
-                    {
-                        method: "GET",
-                        credentials: "include",
-                        headers: {
-                            "Accept": "application/json"
-                        }
-                    }
-                );
+                const response = await fetch(`${AUTH_API}/auth/status`, {
+                    method: "GET",
+                    credentials: "include",
+                    headers: { "Accept": "application/json" }
+                });
 
                 if (!response.ok) {
                     throw new Error(
@@ -297,6 +247,8 @@ async function authRequest(endpoint, payload = {}) {
                 authUsername = "";
                 authStatusChecked = false;
 
+                updateAuthUI();
+
                 return false;
             } finally {
                 authStatusPromise = null;
@@ -307,9 +259,7 @@ async function authRequest(endpoint, payload = {}) {
     }
 
     function updateAuthUI() {
-        const usernameElements = $$("[data-auth-username]");
-
-        usernameElements.forEach(element => {
+        $$("[data-auth-username]").forEach(element => {
             element.textContent = authUsername || "User";
         });
 
@@ -332,9 +282,7 @@ async function authRequest(endpoint, payload = {}) {
         $$("[data-auth-open]").forEach(button => {
             button.addEventListener("click", event => {
                 event.preventDefault();
-
-                const mode = button.dataset.authOpen || "login";
-                openAuthScreen(mode);
+                openAuthScreen(button.dataset.authOpen || "login");
             });
         });
 
@@ -349,8 +297,7 @@ async function authRequest(endpoint, payload = {}) {
 
         if (switchButton) {
             switchButton.addEventListener("click", () => {
-                const mode = switchButton.dataset.authOpen || "register";
-                setAuthMode(mode);
+                setAuthMode(switchButton.dataset.authOpen || "register");
             });
         }
 
@@ -372,22 +319,17 @@ async function authRequest(endpoint, payload = {}) {
                     return;
                 }
 
-                const submitButton = $(
-                    'button[type="submit"]',
-                    loginForm
-                );
+                const submitButton = $('button[type="submit"]', loginForm);
 
-                if (submitButton) {
-                    submitButton.disabled = true;
-                }
+                if (submitButton) submitButton.disabled = true;
 
                 authMessage("loginForm", "Logging in...");
 
                 try {
                     const data = await authRequest("/login", {
                         username: identifier,
-                        identifier: identifier,
-                        password: password
+                        identifier,
+                        password
                     });
 
                     authLoggedIn = true;
@@ -408,9 +350,7 @@ async function authRequest(endpoint, payload = {}) {
                         true
                     );
                 } finally {
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                    }
+                    if (submitButton) submitButton.disabled = false;
                 }
             });
         }
@@ -451,14 +391,9 @@ async function authRequest(endpoint, payload = {}) {
                     return;
                 }
 
-                const submitButton = $(
-                    'button[type="submit"]',
-                    registerForm
-                );
+                const submitButton = $('button[type="submit"]', registerForm);
 
-                if (submitButton) {
-                    submitButton.disabled = true;
-                }
+                if (submitButton) submitButton.disabled = true;
 
                 authMessage("registerForm", "Creating your account...");
 
@@ -477,16 +412,16 @@ async function authRequest(endpoint, payload = {}) {
 
                     setAuthMode("login");
 
-                    authMessage(
-                        "loginForm",
-                        data.message || "Account created! Please log in."
-                    );
-
                     const loginIdentifier = $("#loginIdentifier");
 
                     if (loginIdentifier) {
                         loginIdentifier.value = username;
                     }
+
+                    authMessage(
+                        "loginForm",
+                        data.message || "Account created! Please log in."
+                    );
 
                     notify("Account created. Please log in.");
                 } catch (error) {
@@ -496,9 +431,7 @@ async function authRequest(endpoint, payload = {}) {
                         true
                     );
                 } finally {
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                    }
+                    if (submitButton) submitButton.disabled = false;
                 }
             });
         }
@@ -517,6 +450,7 @@ async function authRequest(endpoint, payload = {}) {
 
                     updateAuthUI();
                     notify("You have logged out.");
+
                     openAuthScreen("login");
                 } catch (error) {
                     notify("Logout failed: " + error.message);
@@ -527,9 +461,7 @@ async function authRequest(endpoint, payload = {}) {
         checkAuthStatus();
     }
 
-    /* ==========================================
-       OPEN CHAT APPLICATION
-    ========================================== */
+    /* OPEN CHAT APPLICATION */
 
     async function openDiviAI() {
         const home = $("#homePage");
@@ -541,10 +473,15 @@ async function authRequest(endpoint, payload = {}) {
             return;
         }
 
-       if (authScreen && !authLoggedIn) {
-    openAuthScreen("login");
-    return;
-}
+        if (!authLoggedIn) {
+            const loggedIn = await checkAuthStatus();
+
+            if (!loggedIn) {
+                openAuthScreen("login");
+                return;
+            }
+        }
+
         if (home) {
             home.hidden = true;
             home.style.display = "none";
@@ -605,9 +542,7 @@ async function authRequest(endpoint, payload = {}) {
     window.openDiviAI = openDiviAI;
     window.returnToHome = returnToHome;
 
-    /* ==========================================
-       CONNECT HOMEPAGE BUTTONS
-    ========================================== */
+    /* HOMEPAGE BUTTONS */
 
     function setupNavigation() {
         $$(".nav-tab").forEach(button => {
@@ -639,9 +574,7 @@ async function authRequest(endpoint, payload = {}) {
         }
     }
 
-    /* ==========================================
-       CONVERSATION STORAGE
-    ========================================== */
+    /* CHAT STORAGE */
 
     function loadChats() {
         try {
@@ -688,7 +621,6 @@ async function authRequest(endpoint, payload = {}) {
 
         conversations.unshift(chat);
         conversations = conversations.slice(0, MAX_CHATS);
-
         currentChatId = chat.id;
 
         saveChats();
@@ -731,9 +663,7 @@ async function authRequest(endpoint, payload = {}) {
             return;
         }
 
-        if (!window.confirm("Delete all saved conversations?")) {
-            return;
-        }
+        if (!window.confirm("Delete all saved conversations?")) return;
 
         conversations = [];
         currentChatId = null;
@@ -754,9 +684,7 @@ async function authRequest(endpoint, payload = {}) {
         closeSidebar();
     }
 
-    /* ==========================================
-       RENDER HISTORY
-    ========================================== */
+    /* RENDER CHAT HISTORY */
 
     function renderHistory() {
         const container = $("#chatHistory");
@@ -814,9 +742,7 @@ async function authRequest(endpoint, payload = {}) {
         });
     }
 
-    /* ==========================================
-       RENDER MESSAGES
-    ========================================== */
+    /* RENDER CHAT MESSAGES */
 
     function renderMessages() {
         const box = $("#chatBox");
@@ -849,9 +775,7 @@ async function authRequest(endpoint, payload = {}) {
 
         const welcome = $("#welcomeScreen");
 
-        if (welcome) {
-            welcome.hidden = true;
-        }
+        if (welcome) welcome.hidden = true;
 
         const row = document.createElement("div");
 
@@ -947,9 +871,7 @@ async function authRequest(endpoint, payload = {}) {
         return row;
     }
 
-    /* ==========================================
-       SEND MESSAGE TO BACKEND
-    ========================================== */
+    /* SEND MESSAGE TO BACKEND */
 
     async function askBackend(question) {
         const chat = getChat(currentChatId);
@@ -978,16 +900,21 @@ async function authRequest(endpoint, payload = {}) {
         });
 
         const text = await response.text();
-
         let data;
 
         try {
             data = text ? JSON.parse(text) : {};
-        } catch {
+        } catch (error) {
             data = { response: text };
         }
 
         if (!response.ok) {
+            if (response.status === 401) {
+                authLoggedIn = false;
+                authStatusChecked = false;
+                updateAuthUI();
+            }
+
             throw new Error(
                 data.error ||
                 data.message ||
@@ -996,9 +923,7 @@ async function authRequest(endpoint, payload = {}) {
             );
         }
 
-        if (data.error) {
-            throw new Error(data.error);
-        }
+        if (data.error) throw new Error(data.error);
 
         const answer =
             data.answer ??
@@ -1025,6 +950,16 @@ async function authRequest(endpoint, payload = {}) {
 
         if (!question || sending) return;
 
+        if (!authLoggedIn) {
+            const loggedIn = await checkAuthStatus();
+
+            if (!loggedIn) {
+                openAuthScreen("login");
+                notify("Please log in before sending a message.");
+                return;
+            }
+        }
+
         if (!getChat(currentChatId)) {
             createNewChat();
         }
@@ -1042,9 +977,7 @@ async function authRequest(endpoint, payload = {}) {
 
         const sendButton = $("#sendButton");
 
-        if (sendButton) {
-            sendButton.disabled = true;
-        }
+        if (sendButton) sendButton.disabled = true;
 
         const loading = showLoading();
 
@@ -1060,6 +993,12 @@ async function authRequest(endpoint, payload = {}) {
 
             if (loading) loading.remove();
 
+            if (/401|log in|login|authenticated/i.test(error.message)) {
+                authLoggedIn = false;
+                authStatusChecked = false;
+                updateAuthUI();
+            }
+
             addMessage(
                 "assistant",
                 "I couldn't get an answer from the server.\n\n" +
@@ -1070,10 +1009,7 @@ async function authRequest(endpoint, payload = {}) {
         } finally {
             sending = false;
 
-            if (sendButton) {
-                sendButton.disabled = false;
-            }
-
+            if (sendButton) sendButton.disabled = false;
             if (input) input.focus();
         }
     }
@@ -1108,8 +1044,8 @@ async function authRequest(endpoint, payload = {}) {
                 link.textContent = source.title || parsed.hostname;
 
                 section.appendChild(link);
-            } catch {
-                // Ignore invalid links.
+            } catch (error) {
+                // Ignore invalid source URLs.
             }
         });
 
@@ -1119,9 +1055,7 @@ async function authRequest(endpoint, payload = {}) {
         }
     }
 
-    /* ==========================================
-       CHAT FORM
-    ========================================== */
+    /* CHAT FORM */
 
     function setupChat() {
         const form = $("#chatForm");
@@ -1165,9 +1099,7 @@ async function authRequest(endpoint, payload = {}) {
         });
     }
 
-    /* ==========================================
-       CHAT CONTROL BUTTONS
-    ========================================== */
+    /* CHAT CONTROL BUTTONS */
 
     function setupChatButtons() {
         const newChatButton = $("#newChatButton");
@@ -1188,7 +1120,6 @@ async function authRequest(endpoint, payload = {}) {
         if (toggle && sidebar) {
             toggle.addEventListener("click", () => {
                 const opened = sidebar.classList.toggle("sidebar-open");
-
                 toggle.setAttribute("aria-expanded", String(opened));
             });
 
@@ -1208,6 +1139,10 @@ async function authRequest(endpoint, payload = {}) {
         window.addEventListener("resize", () => {
             if (window.innerWidth > 760 && sidebar) {
                 sidebar.classList.remove("sidebar-open");
+
+                if (toggle) {
+                    toggle.setAttribute("aria-expanded", "false");
+                }
             }
         });
     }
@@ -1216,18 +1151,14 @@ async function authRequest(endpoint, payload = {}) {
         const sidebar = $("#sidebar");
         const toggle = $("#sidebarToggle");
 
-        if (sidebar) {
-            sidebar.classList.remove("sidebar-open");
-        }
+        if (sidebar) sidebar.classList.remove("sidebar-open");
 
         if (toggle) {
             toggle.setAttribute("aria-expanded", "false");
         }
     }
 
-    /* ==========================================
-       VOICE INPUT
-    ========================================== */
+    /* VOICE INPUT */
 
     function setupVoice() {
         const button = $("#voiceButton");
@@ -1242,6 +1173,7 @@ async function authRequest(endpoint, payload = {}) {
             button.addEventListener("click", () => {
                 notify("Voice input is not supported in this browser.");
             });
+
             return;
         }
 
@@ -1276,9 +1208,7 @@ async function authRequest(endpoint, payload = {}) {
         });
     }
 
-    /* ==========================================
-       INITIALIZE
-    ========================================== */
+    /* INITIALIZE */
 
     function init() {
         loadChats();
