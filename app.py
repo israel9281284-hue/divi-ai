@@ -284,16 +284,104 @@ def search_tavily(query):
         "results": results
     }
 
+# ==========================================
+# CONVERSATION CONTEXT
+# ==========================================
 
+def build_contextual_query(query, history):
+    """
+    Use previous conversation messages to clarify follow-up
+    questions before sending them to Tavily.
+    """
+
+    if not isinstance(history, list):
+        return query, False
+
+    # Find the most recent earlier user question.
+    previous_question = None
+
+    for message in reversed(history):
+        if not isinstance(message, dict):
+            continue
+
+        role = message.get("role", "")
+        content = message.get("content", "")
+
+        if role != "user" or not isinstance(content, str):
+            continue
+
+        content = content.strip()
+
+        if not content or content.lower() == query.lower():
+            continue
+
+        previous_question = content
+        break
+
+    if not previous_question:
+        return query, False
+
+    # Identify follow-up questions that need earlier context.
+    words = set(query.lower().replace("?", "").replace(",", "").split())
+
+    follow_up_phrases = (
+        "tell me more",
+        "explain it",
+        "explain that",
+        "what about",
+        "how about",
+        "why is that",
+        "what does it",
+        "give me an example",
+        "give an example",
+        "in simple words",
+        "in simpler words",
+        "continue",
+        "elaborate",
+    )
+
+    follow_up_words = {
+        "it",
+        "that",
+        "they",
+        "them",
+        "those",
+        "these",
+        "its",
+        "their",
+        "more",
+        "another",
+    }
+
+    is_follow_up = (
+        len(words) <= 7
+        or bool(words.intersection(follow_up_words))
+        or any(
+            phrase in query.lower()
+            for phrase in follow_up_phrases
+        )
+    )
+
+    if not is_follow_up:
+        return query, False
+
+    contextual_query = (
+        f"Previous question: {previous_question}\n"
+        f"Follow-up question: {query}"
+    )
+
+    # Keep the search query within a reasonable length.
+    contextual_query = contextual_query[:1000]
+
+    return contextual_query, True
 # ==========================================
 # WEB SEARCH — MAIN FRONTEND ENDPOINT
 # ==========================================
-
 @app.route("/api/web-search", methods=["POST"])
 def web_search():
     data = request.get_json(silent=True) or {}
 
-    query = data.get("query", "")
+    query = data.get("query") or data.get("question") or ""
 
     if not isinstance(query, str):
         return jsonify({
@@ -312,18 +400,41 @@ def web_search():
             "error": "Your question is too long. Keep it under 500 characters."
         }), 400
 
+    # Accept conversation history from script.js.
+    history = data.get("history")
+
+    if not isinstance(history, list):
+        history = data.get("messages", [])
+
+    if not isinstance(history, list):
+        history = []
+
+    # Avoid processing an unnecessarily large history.
+    history = history[-12:]
+
+    # Clarify follow-up questions using earlier messages.
+    search_query, context_used = build_contextual_query(
+        query,
+        history
+    )
+
     try:
-        result = search_tavily(query)
+        result = search_tavily(search_query)
 
         return jsonify({
             "status": "success",
             "query": query,
+            "search_query": search_query,
+            "context_used": context_used,
             "answer": result["answer"],
             "results": result["results"]
         }), 200
 
     except ValueError as error:
-        app.logger.warning("Web search failed: %s", error)
+        app.logger.warning(
+            "Web search failed: %s",
+            error
+        )
 
         message = str(error)
 
@@ -352,13 +463,13 @@ def web_search():
         }), 502
 
     except Exception:
-        app.logger.exception("Unexpected web-search error.")
+        app.logger.exception(
+            "Unexpected web-search error."
+        )
 
         return jsonify({
             "error": "An unexpected server error occurred. Please try again."
         }), 500
-
-
 # ==========================================
 # VOICE COMMAND
 # ==========================================
