@@ -572,85 +572,59 @@
        OPEN CHAT APPLICATION
     ========================================== */
 
-    async function openDiviAI() {
-        const home = $("#homePage");
-        const app = $("#aiAppScreen");
-        const authScreen = $("#authScreen");
+    
+```javascript
+async function openDiviAI() {
+    const home = $("#homePage");
+    const app = $("#aiAppScreen");
+    const authScreen = $("#authScreen");
 
-        if (!app) {
-            notify("Chat screen not found. Check your index.html.");
+    if (!app) {
+        notify("Chat screen not found. Check your index.html.");
+        return;
+    }
+
+    // Check the server session before opening the chat.
+    if (authScreen) {
+        const loggedIn = await checkAuthStatus(true);
+
+        if (!loggedIn) {
+            openAuthScreen("login");
             return;
         }
-
-        if (authScreen) {
-            const loggedIn = await checkAuthStatus();
-
-            if (!loggedIn) {
-                openAuthScreen("login");
-                return;
-            }
-        }
-
-        if (home) {
-            home.hidden = true;
-            home.style.display = "none";
-        }
-
-        if (authScreen) {
-            authScreen.hidden = true;
-            authScreen.style.display = "none";
-        }
-
-        app.hidden = false;
-        app.style.display = "flex";
-
-        document.body.classList.add("chat-app");
-
-        if (!currentChatId || !getChat(currentChatId)) {
-            createNewChat();
-        } else {
-            renderMessages();
-            renderHistory();
-        }
-
-        closeSidebar();
-
-        const input = $("#userInput");
-
-        if (input) {
-            setTimeout(() => input.focus(), 100);
-        }
     }
 
-    function returnToHome() {
-        const home = $("#homePage");
-        const app = $("#aiAppScreen");
-        const authScreen = $("#authScreen");
-
-        if (app) {
-            app.hidden = true;
-            app.style.display = "none";
-        }
-
-        if (authScreen) {
-            authScreen.hidden = true;
-            authScreen.style.display = "none";
-        }
-
-        if (home) {
-            home.hidden = false;
-            home.style.display = "";
-        }
-
-        document.body.classList.remove("chat-app");
-
-        closeSidebar();
-        showPage("homeHero");
+    if (home) {
+        home.hidden = true;
+        home.style.display = "none";
     }
 
-    window.openDiviAI = openDiviAI;
-    window.returnToHome = returnToHome;
+    if (authScreen) {
+        authScreen.hidden = true;
+        authScreen.style.display = "none";
+    }
 
+    app.hidden = false;
+    app.style.display = "flex";
+
+    document.body.classList.add("chat-app");
+
+    if (!currentChatId || !getChat(currentChatId)) {
+        createNewChat();
+    } else {
+        renderMessages();
+        renderHistory();
+    }
+
+    closeSidebar();
+
+    const input = $("#userInput");
+
+    if (input) {
+        setTimeout(() => input.focus(), 100);
+    }
+}
+```
     /* ==========================================
        HOMEPAGE BUTTONS
     ========================================== */
