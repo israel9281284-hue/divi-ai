@@ -1642,7 +1642,8 @@
     }
 
 
-       if (document.readyState === "loading") {
+          // Initialize Divi AI when the page is ready.
+    if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", init, {
             once: true
         });
@@ -1650,6 +1651,7 @@
         init();
     }
 
-    // Allow HTML buttons to open Divi AI.
-   window.openDiviAI = openDiviAI;
+    // Make the app-opening function available to HTML buttons.
+    window.openDiviAI = openDiviAI;
+
 })();
