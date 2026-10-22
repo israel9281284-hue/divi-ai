@@ -732,59 +732,61 @@
        OPEN CHAT APPLICATION
     ========================================== */
 
-    async function openDiviAI() {
-        const home = $("#homePage");
-        const app = $("#aiAppScreen");
-        const authScreen = $("#authScreen");
+    ```javascript
+async function openDiviAI() {
+    const home = document.getElementById("homePage");
+    const app = document.getElementById("aiAppScreen");
+    const authScreen = document.getElementById("authScreen");
 
-        if (!app) {
-            notify("Chat screen not found. Check your index.html.");
-            return;
-        }
-
-        // Confirm the active session with the backend.
-        const loggedIn = await checkAuthStatus(true);
-
-        if (!loggedIn || !authUsername) {
-            clearCurrentChatData();
-            openAuthScreen("login");
-            return;
-        }
-
-        // Load only this user's saved conversations.
-        loadChats();
-
-        if (home) {
-            home.hidden = true;
-            home.style.display = "none";
-        }
-
-        if (authScreen) {
-            authScreen.hidden = true;
-            authScreen.style.display = "none";
-        }
-
-        app.hidden = false;
-        app.style.display = "flex";
-
-        document.body.classList.add("chat-app");
-
-        if (!currentChatId || !getChat(currentChatId)) {
-            createNewChat();
-        } else {
-            renderMessages();
-            renderHistory();
-        }
-
-        closeSidebar();
-
-        const input = $("#userInput");
-
-        if (input) {
-            setTimeout(() => input.focus(), 100);
-        }
+    if (!app) {
+        notify("Chat screen not found. Check your index.html.");
+        return;
     }
 
+    // Check the backend session before opening the app.
+    const loggedIn = await checkAuthStatus(true);
+
+    if (!loggedIn || !authUsername) {
+        notify("Your login session could not be verified. Please log in again.");
+        openAuthScreen("login");
+        return;
+    }
+
+    // Load this account's conversations.
+    loadChats();
+    updateAuthUI();
+
+    if (home) {
+        home.hidden = true;
+        home.style.display = "none";
+    }
+
+    if (authScreen) {
+        authScreen.hidden = true;
+        authScreen.style.display = "none";
+    }
+
+    app.hidden = false;
+    app.style.display = "flex";
+
+    document.body.classList.add("chat-app");
+
+    if (!currentChatId || !getChat(currentChatId)) {
+        createNewChat();
+    } else {
+        renderMessages();
+        renderHistory();
+    }
+
+    closeSidebar();
+
+    const input = document.getElementById("userInput");
+
+    if (input) {
+        setTimeout(() => input.focus(), 100);
+    }
+}
+```
 
     /* ==========================================
        HOMEPAGE BUTTONS
