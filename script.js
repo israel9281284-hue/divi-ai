@@ -174,45 +174,49 @@
     }
 
     async function authRequest(endpoint, payload = {}) {
-        const isStatusCheck = endpoint === "/auth/status";
+    const isStatusCheck = endpoint === "/auth/status";
 
-        const response = await fetch(`${AUTH_API}${endpoint}`, {
-            method: isStatusCheck ? "GET" : "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            ...(isStatusCheck ? {} : {
-                body: JSON.stringify(payload)
-            })
-        });
+    const response = await fetch(`${AUTH_API}${endpoint}`, {
+        method: isStatusCheck ? "GET" : "POST",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        ...(isStatusCheck ? {} : {
+            body: JSON.stringify(payload)
+        })
+    });
 
-        const text = await response.text();
-        let data = {};
+    const text = await response.text();
+    let data = {};
 
-        try {
-            data = text ? JSON.parse(text) : {};
-        } catch (error) {
-            data = { message: text };
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.error ||
-                data.message ||
-                data.detail ||
-                `Request failed (${response.status}).`
-            );
-        }
-
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
-        return data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (error) {
+        data = { message: text };
     }
 
+    if (!response.ok) {
+        // Handle 409 Conflict specifically
+        if (response.status === 409) {
+            throw new Error(data.error || data.message || "Username is already taken. Please choose another one or log in.");
+        }
+
+        throw new Error(
+            data.error ||
+            data.message ||
+            data.detail ||
+            `Request failed (${response.status}).`
+        );
+    }
+
+    if (data.error) {
+        throw new Error(data.error);
+    }
+
+    return data;
+}
     async function checkAuthStatus(force = false) {
         if (authStatusChecked && !force) return authLoggedIn;
         if (authStatusPromise) return authStatusPromise;
