@@ -1,4 +1,3 @@
-```javascript
 "use strict";
 
 (() => {
@@ -99,7 +98,7 @@
     }
 
     /* ==========================================
-       AUTHENTICATION
+       AUTHENTICATION MESSAGES
     ========================================== */
 
     function authMessage(formId, message, isError = false) {
@@ -127,8 +126,13 @@
 
         const registering = mode === "register";
 
-        if (loginForm) loginForm.hidden = registering;
-        if (registerForm) registerForm.hidden = !registering;
+        if (loginForm) {
+            loginForm.hidden = registering;
+        }
+
+        if (registerForm) {
+            registerForm.hidden = !registering;
+        }
 
         if (title) {
             title.textContent = registering
@@ -158,8 +162,11 @@
                 : "register";
         }
 
-        authMessage("loginForm", "");
-        authMessage("registerForm", "");
+        const loginMessage = $("#loginMessage");
+        const registerMessage = $("#registerMessage");
+
+        if (loginMessage) loginMessage.textContent = "";
+        if (registerMessage) registerMessage.textContent = "";
     }
 
     function openAuthScreen(mode = "login") {
@@ -205,19 +212,32 @@
         }
 
         document.body.classList.remove("chat-app");
+
         showPage("homeHero");
     }
 
+    /* ==========================================
+       AUTHENTICATION API
+    ========================================== */
+
     async function authRequest(endpoint, payload = {}) {
-        const response = await fetch(`${AUTH_API}${endpoint}`, {
+        const options = {
             method: "POST",
             credentials: "include",
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+            }
+        };
+
+        if (endpoint !== "/logout") {
+            options.body = JSON.stringify(payload);
+        }
+
+        const response = await fetch(
+            `${AUTH_API}${endpoint}`,
+            options
+        );
 
         const text = await response.text();
 
@@ -245,12 +265,12 @@
         return data;
     }
 
-    async function checkAuthStatus() {
-        if (authStatusChecked) {
+    async function checkAuthStatus(force = false) {
+        if (!force && authStatusChecked) {
             return authLoggedIn;
         }
 
-        if (authStatusPromise) {
+        if (!force && authStatusPromise) {
             return authStatusPromise;
         }
 
@@ -283,14 +303,16 @@
                 );
 
                 authUsername = data.username || "";
-
                 authStatusChecked = true;
 
                 updateAuthUI();
 
                 return authLoggedIn;
             } catch (error) {
-                console.error("Could not check login status:", error);
+                console.error(
+                    "Could not check login status:",
+                    error
+                );
 
                 authLoggedIn = false;
                 authUsername = "";
@@ -306,9 +328,7 @@
     }
 
     function updateAuthUI() {
-        const usernameElements = $$("[data-auth-username]");
-
-        usernameElements.forEach(element => {
+        $$("[data-auth-username]").forEach(element => {
             element.textContent = authUsername || "User";
         });
 
@@ -327,14 +347,18 @@
         }
     }
 
+    /* ==========================================
+       LOGIN AND REGISTRATION
+    ========================================== */
+
     function setupAuth() {
         $$("[data-auth-open]").forEach(button => {
             button.addEventListener("click", event => {
                 event.preventDefault();
 
-                const mode = button.dataset.authOpen || "login";
-
-                openAuthScreen(mode);
+                openAuthScreen(
+                    button.dataset.authOpen || "login"
+                );
             });
         });
 
@@ -348,8 +372,12 @@
         const switchButton = $("#authSwitchButton");
 
         if (switchButton) {
-            switchButton.addEventListener("click", () => {
-                const mode = switchButton.dataset.authOpen || "register";
+            switchButton.addEventListener("click", event => {
+                event.preventDefault();
+
+                const mode =
+                    switchButton.dataset.authOpen || "register";
+
                 setAuthMode(mode);
             });
         }
@@ -360,8 +388,11 @@
             loginForm.addEventListener("submit", async event => {
                 event.preventDefault();
 
-                const identifier = $("#loginIdentifier")?.value.trim();
-                const password = $("#loginPassword")?.value;
+                const identifier =
+                    $("#loginIdentifier")?.value.trim();
+
+                const password =
+                    $("#loginPassword")?.value;
 
                 if (!identifier || !password) {
                     authMessage(
@@ -377,7 +408,9 @@
                     loginForm
                 );
 
-                if (submitButton) submitButton.disabled = true;
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
 
                 authMessage("loginForm", "Logging in...");
 
@@ -391,6 +424,7 @@
                     authLoggedIn = true;
                     authUsername = data.username || identifier;
                     authStatusChecked = true;
+                    authStatusPromise = null;
 
                     updateAuthUI();
 
@@ -406,7 +440,9 @@
                         true
                     );
                 } finally {
-                    if (submitButton) submitButton.disabled = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
                 }
             });
         }
@@ -417,9 +453,11 @@
             registerForm.addEventListener("submit", async event => {
                 event.preventDefault();
 
-                const username = $("#registerUsername")?.value.trim();
-                const email = $("#registerEmail")?.value.trim();
-                const password = $("#registerPassword")?.value;
+                const username =
+                    $("#registerUsername")?.value.trim();
+
+                const password =
+                    $("#registerPassword")?.value;
 
                 if (!username || !password) {
                     authMessage(
@@ -453,16 +491,16 @@
                     registerForm
                 );
 
-                if (submitButton) submitButton.disabled = true;
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
 
-                authMessage("registerForm", "Creating your account...");
+                authMessage(
+                    "registerForm",
+                    "Creating your account..."
+                );
 
                 try {
-                    /*
-                     * The current backend accepts username and password.
-                     * Email is not sent because the existing users table
-                     * may not contain an email column.
-                     */
                     const data = await authRequest("/register", {
                         username,
                         password
@@ -470,26 +508,24 @@
 
                     registerForm.reset();
 
-                    /*
-                     * Some backends log users in automatically after
-                     * registration. Others require a separate login.
-                     */
                     authLoggedIn = false;
                     authUsername = "";
                     authStatusChecked = false;
-
-                    authMessage(
-                        "registerForm",
-                        data.message ||
-                        "Account created! Please log in."
-                    );
+                    authStatusPromise = null;
 
                     setAuthMode("login");
 
                     const loginIdentifier = $("#loginIdentifier");
+
                     if (loginIdentifier) {
                         loginIdentifier.value = username;
                     }
+
+                    authMessage(
+                        "loginForm",
+                        data.message ||
+                        "Account created! Please log in."
+                    );
 
                     notify("Account created. Please log in.");
                 } catch (error) {
@@ -499,7 +535,9 @@
                         true
                     );
                 } finally {
-                    if (submitButton) submitButton.disabled = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
                 }
             });
         }
@@ -514,6 +552,7 @@
                     authLoggedIn = false;
                     authUsername = "";
                     authStatusChecked = true;
+                    authStatusPromise = null;
 
                     updateAuthUI();
 
@@ -613,30 +652,38 @@
     window.returnToHome = returnToHome;
 
     /* ==========================================
-       CONNECT HOMEPAGE BUTTONS
+       HOMEPAGE BUTTONS
     ========================================== */
 
     function setupNavigation() {
         $$(".nav-tab").forEach(button => {
-            button.addEventListener("click", () => {
+            button.addEventListener("click", event => {
+                event.preventDefault();
                 showPage(button.dataset.page);
             });
         });
 
         $$("[data-open-page]").forEach(button => {
-            button.addEventListener("click", () => {
+            button.addEventListener("click", event => {
+                event.preventDefault();
                 showPage(button.dataset.openPage);
             });
         });
 
         $$(".open-ai-button, .hero-primary-button, .about-button, .contact-button")
             .forEach(button => {
-                button.addEventListener("click", openDiviAI);
+                button.addEventListener("click", event => {
+                    event.preventDefault();
+                    openDiviAI();
+                });
             });
 
         $$(".home-return-button, .chat-home-button")
             .forEach(button => {
-                button.addEventListener("click", returnToHome);
+                button.addEventListener("click", event => {
+                    event.preventDefault();
+                    returnToHome();
+                });
             });
 
         const year = $("#copyrightYear");
@@ -663,7 +710,11 @@
                 ).slice(0, MAX_CHATS)
                 : [];
         } catch (error) {
-            console.error("Unable to load chat history:", error);
+            console.error(
+                "Unable to load chat history:",
+                error
+            );
+
             conversations = [];
         }
     }
@@ -675,7 +726,11 @@
                 JSON.stringify(conversations)
             );
         } catch (error) {
-            console.error("Unable to save chat history:", error);
+            console.error(
+                "Unable to save chat history:",
+                error
+            );
+
             notify("Could not save conversation history.");
         }
     }
@@ -713,7 +768,9 @@
     }
 
     function deleteChat(id) {
-        conversations = conversations.filter(chat => chat.id !== id);
+        conversations = conversations.filter(
+            chat => chat.id !== id
+        );
 
         if (currentChatId === id) {
             currentChatId = conversations.length
@@ -762,7 +819,7 @@
     }
 
     /* ==========================================
-       RENDER HISTORY
+       RENDER CHAT HISTORY
     ========================================== */
 
     function renderHistory() {
@@ -774,14 +831,18 @@
 
         if (!conversations.length) {
             const empty = document.createElement("p");
+
             empty.className = "no-history";
-            empty.textContent = "Your conversations will appear here.";
+            empty.textContent =
+                "Your conversations will appear here.";
+
             container.appendChild(empty);
             return;
         }
 
         conversations.forEach(chat => {
             const row = document.createElement("div");
+
             row.className = "history-row";
 
             if (chat.id === currentChatId) {
@@ -789,27 +850,37 @@
             }
 
             const selectButton = document.createElement("button");
+
             selectButton.type = "button";
             selectButton.className = "history-item";
             selectButton.title = chat.title || "New chat";
 
             const icon = document.createElement("span");
+
             icon.className = "history-icon";
             icon.textContent = "💬";
 
             const title = document.createElement("span");
+
             title.className = "history-text";
             title.textContent = chat.title || "New chat";
 
             selectButton.append(icon, title);
-            selectButton.addEventListener("click", () => selectChat(chat.id));
+
+            selectButton.addEventListener("click", () => {
+                selectChat(chat.id);
+            });
 
             const deleteButton = document.createElement("button");
+
             deleteButton.type = "button";
             deleteButton.className = "delete-chat-button";
             deleteButton.textContent = "×";
             deleteButton.title = "Delete conversation";
-            deleteButton.setAttribute("aria-label", "Delete conversation");
+            deleteButton.setAttribute(
+                "aria-label",
+                "Delete conversation"
+            );
 
             deleteButton.addEventListener("click", event => {
                 event.stopPropagation();
@@ -862,14 +933,20 @@
 
         const row = document.createElement("div");
 
-        row.className = "message " +
-            (message.role === "user" ? "user-message" : "ai-message");
+        row.className =
+            "message " +
+            (message.role === "user"
+                ? "user-message"
+                : "ai-message");
 
         const avatar = document.createElement("div");
+
         avatar.className = "message-avatar";
-        avatar.textContent = message.role === "user" ? "YOU" : "D";
+        avatar.textContent =
+            message.role === "user" ? "YOU" : "D";
 
         const content = document.createElement("div");
+
         content.className = "message-content";
         content.textContent = message.content;
 
@@ -890,6 +967,8 @@
             createNewChat();
             chat = getChat(currentChatId);
         }
+
+        if (!chat) return null;
 
         const message = {
             id: createId(),
@@ -920,27 +999,36 @@
         if (!box) return null;
 
         const row = document.createElement("div");
+
         row.className = "message ai-message loading-message";
         row.setAttribute("role", "status");
-        row.setAttribute("aria-label", "Divi AI is thinking");
+        row.setAttribute(
+            "aria-label",
+            "Divi AI is thinking"
+        );
 
         const avatar = document.createElement("div");
+
         avatar.className = "message-avatar";
         avatar.textContent = "D";
 
         const content = document.createElement("div");
+
         content.className = "message-content loading-content";
 
         const label = document.createElement("span");
+
         label.className = "loading-label";
         label.textContent = "Divi AI is thinking";
 
         const dots = document.createElement("span");
+
         dots.className = "loading-dots";
         dots.setAttribute("aria-hidden", "true");
 
         for (let i = 0; i < 3; i++) {
             const dot = document.createElement("span");
+
             dot.className = "loading-dot";
             dots.appendChild(dot);
         }
@@ -964,7 +1052,9 @@
         const history = (chat?.messages || [])
             .slice(-12)
             .map(message => ({
-                role: message.role === "assistant" ? "assistant" : "user",
+                role: message.role === "assistant"
+                    ? "assistant"
+                    : "user",
                 content: message.content
             }));
 
@@ -1023,7 +1113,8 @@
         }
 
         throw new Error(
-            "The backend did not return an answer. Check its response format."
+            "The backend did not return an answer. " +
+            "Check its response format."
         );
     }
 
@@ -1058,21 +1149,25 @@
         try {
             const result = await askBackend(question);
 
-            if (loading) loading.remove();
+            if (loading) {
+                loading.remove();
+            }
 
             addMessage("assistant", result.answer);
             renderSources(result.sources);
         } catch (error) {
             console.error("Divi AI error:", error);
 
-            if (loading) loading.remove();
+            if (loading) {
+                loading.remove();
+            }
 
             addMessage(
                 "assistant",
                 "I couldn't get an answer from the server.\n\n" +
                 error.message +
-                "\n\nPlease check that the backend endpoint /api/web-search " +
-                "is working and its API key is configured."
+                "\n\nPlease check that the backend endpoint " +
+                "/api/web-search is working and its API key is configured."
             );
         } finally {
             sending = false;
@@ -1081,19 +1176,29 @@
                 sendButton.disabled = false;
             }
 
-            if (input) input.focus();
+            if (input) {
+                input.focus();
+            }
         }
     }
+
+    /* ==========================================
+       SEARCH SOURCES
+    ========================================== */
 
     function renderSources(sources) {
         const box = $("#chatBox");
 
-        if (!box || !Array.isArray(sources) || !sources.length) return;
+        if (!box || !Array.isArray(sources) || !sources.length) {
+            return;
+        }
 
         const section = document.createElement("div");
+
         section.className = "search-results";
 
         const heading = document.createElement("h3");
+
         heading.textContent = "Sources";
         section.appendChild(heading);
 
@@ -1105,18 +1210,22 @@
             try {
                 const parsed = new URL(url);
 
-                if (!["http:", "https:"].includes(parsed.protocol)) return;
+                if (!["http:", "https:"].includes(parsed.protocol)) {
+                    return;
+                }
 
                 const link = document.createElement("a");
+
                 link.className = "search-result-link";
                 link.href = parsed.href;
                 link.target = "_blank";
                 link.rel = "noopener noreferrer";
-                link.textContent = source.title || parsed.hostname;
+                link.textContent =
+                    source.title || parsed.hostname;
 
                 section.appendChild(link);
             } catch {
-                // Ignore invalid links.
+                // Ignore invalid source URLs.
             }
         });
 
@@ -1137,6 +1246,7 @@
         if (form) {
             form.addEventListener("submit", event => {
                 event.preventDefault();
+
                 sendMessage(input ? input.value : "");
             });
         }
@@ -1144,6 +1254,7 @@
         if (input) {
             input.addEventListener("input", () => {
                 input.style.height = "auto";
+
                 input.style.height =
                     Math.min(input.scrollHeight, 180) + "px";
             });
@@ -1166,7 +1277,9 @@
         }
 
         $$("[data-suggestion]").forEach(button => {
-            button.addEventListener("click", () => {
+            button.addEventListener("click", event => {
+                event.preventDefault();
+
                 sendMessage(button.dataset.suggestion);
             });
         });
@@ -1180,23 +1293,35 @@
         const newChatButton = $("#newChatButton");
 
         if (newChatButton) {
-            newChatButton.addEventListener("click", createNewChat);
+            newChatButton.addEventListener("click", event => {
+                event.preventDefault();
+                createNewChat();
+            });
         }
 
         const clearButton = $("#clearHistoryButton");
 
         if (clearButton) {
-            clearButton.addEventListener("click", clearHistory);
+            clearButton.addEventListener("click", event => {
+                event.preventDefault();
+                clearHistory();
+            });
         }
 
         const toggle = $("#sidebarToggle");
         const sidebar = $("#sidebar");
 
         if (toggle && sidebar) {
-            toggle.addEventListener("click", () => {
-                const opened = sidebar.classList.toggle("sidebar-open");
+            toggle.addEventListener("click", event => {
+                event.preventDefault();
 
-                toggle.setAttribute("aria-expanded", String(opened));
+                const opened =
+                    sidebar.classList.toggle("sidebar-open");
+
+                toggle.setAttribute(
+                    "aria-expanded",
+                    String(opened)
+                );
             });
 
             document.addEventListener("click", event => {
@@ -1207,7 +1332,11 @@
                     !toggle.contains(event.target)
                 ) {
                     sidebar.classList.remove("sidebar-open");
-                    toggle.setAttribute("aria-expanded", "false");
+
+                    toggle.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
                 }
             });
         }
@@ -1246,22 +1375,34 @@
             window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            button.addEventListener("click", () => {
-                notify("Voice input is not supported in this browser.");
+            button.addEventListener("click", event => {
+                event.preventDefault();
+
+                notify(
+                    "Voice input is not supported in this browser."
+                );
             });
+
             return;
         }
 
         recognition = new SpeechRecognition();
+
         recognition.lang = "en-US";
         recognition.interimResults = false;
         recognition.continuous = false;
 
-        button.addEventListener("click", () => {
+        button.addEventListener("click", event => {
+            event.preventDefault();
+
             try {
                 recognition.start();
             } catch (error) {
-                console.warn("Voice recognition could not start:", error);
+                console.warn(
+                    "Voice recognition could not start:",
+                    error
+                );
+
                 notify("Please try voice input again.");
             }
         });
@@ -1270,8 +1411,13 @@
             const input = $("#userInput");
 
             if (input) {
-                input.value = event.results[0][0].transcript;
-                input.dispatchEvent(new Event("input", { bubbles: true }));
+                input.value =
+                    event.results[0][0].transcript;
+
+                input.dispatchEvent(
+                    new Event("input", { bubbles: true })
+                );
+
                 input.focus();
             }
         });
@@ -1284,7 +1430,7 @@
     }
 
     /* ==========================================
-       INITIALIZE
+       INITIALIZATION
     ========================================== */
 
     function init() {
@@ -1337,9 +1483,12 @@
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init, { once: true });
+        document.addEventListener(
+            "DOMContentLoaded",
+            init,
+            { once: true }
+        );
     } else {
         init();
     }
 })();
-```
