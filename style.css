@@ -3195,3 +3195,286 @@ textarea {
         font-size: 26px;
     }
 }
+/* =========================================
+   DIVI AI — LOGIN AND SIGNUP DESIGN
+========================================= */
+
+#authScreen[hidden],
+#aiAppScreen[hidden],
+#homePage[hidden] {
+    display: none !important;
+}
+
+#authScreen:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 24px;
+    overflow-y: auto;
+    background:
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(125, 211, 252, 0.55),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 85%,
+            rgba(165, 180, 252, 0.45),
+            transparent 35%
+        ),
+        linear-gradient(135deg, #effaff, #e5edff 55%, #f5f7ff);
+}
+
+#authScreen .auth-card {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    margin: auto;
+    padding: 42px 36px 32px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow:
+        0 25px 80px rgba(51, 91, 150, 0.16),
+        0 5px 20px rgba(51, 91, 150, 0.06);
+    animation: diviAuthAppear 0.35s ease-out;
+}
+
+#authScreen .auth-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #38bdf8, #6366f1, #818cf8);
+}
+
+@keyframes diviAuthAppear {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Back button */
+
+#authScreen .auth-back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 30px;
+    padding: 9px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+#authScreen .auth-back-button:hover {
+    border-color: #7dd3fc;
+    background: #f0f9ff;
+    color: #0369a1;
+}
+
+/* Logo */
+
+#authScreen .auth-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 22px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.25);
+    color: white;
+    font-size: 34px;
+    font-weight: 800;
+}
+
+/* Headings */
+
+#authScreen #authTitle {
+    margin: 0 0 10px;
+    color: #172554;
+    font-size: clamp(26px, 5vw, 32px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -1px;
+    text-align: center;
+}
+
+#authScreen #authDescription {
+    margin: 0 auto 28px;
+    max-width: 310px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+/* Form */
+
+#authScreen #loginForm,
+#authScreen #registerForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#authScreen #loginForm[hidden],
+#authScreen #registerForm[hidden] {
+    display: none !important;
+}
+
+#authScreen #loginForm label,
+#authScreen #registerForm label {
+    margin-top: 7px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#authScreen #loginForm input,
+#authScreen #registerForm input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 49px;
+    padding: 13px 15px;
+    border: 1px solid #dbe4f0;
+    border-radius: 12px;
+    outline: none;
+    background: #f8fafc;
+    color: #172554;
+    font: inherit;
+    font-size: 14px;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+#authScreen #loginForm input::placeholder,
+#authScreen #registerForm input::placeholder {
+    color: #94a3b8;
+}
+
+#authScreen #loginForm input:focus,
+#authScreen #registerForm input:focus {
+    border-color: #38bdf8;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14);
+}
+
+/* Main action button */
+
+#authScreen .auth-submit-button {
+    width: 100%;
+    min-height: 50px;
+    margin-top: 16px;
+    padding: 13px 18px;
+    border: none;
+    border-radius: 13px;
+    background: linear-gradient(110deg, #0284c7, #4f46e5);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.2);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+#authScreen .auth-submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(79, 70, 229, 0.28);
+    filter: brightness(1.05);
+}
+
+#authScreen .auth-submit-button:active {
+    transform: translateY(0);
+}
+
+/* Login and registration messages */
+
+#authScreen .auth-message {
+    min-height: 0;
+    margin: 4px 0 0;
+    color: #dc2626;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Switch between forms */
+
+#authScreen .auth-switch {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin: 25px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #edf2f7;
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+}
+
+#authScreen #authSwitchButton {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#authScreen #authSwitchButton:hover {
+    color: #0284c7;
+    text-decoration: underline;
+}
+
+/* Mobile layout */
+
+@media (max-width: 480px) {
+    #authScreen:not([hidden]) {
+        padding: 16px;
+    }
+
+    #authScreen .auth-card {
+        padding: 32px 22px 25px;
+        border-radius: 22px;
+    }
+
+    #authScreen .auth-back-button {
+        margin-bottom: 24px;
+    }
+
+    #authScreen .auth-logo {
+        width: 60px;
+        height: 60px;
+        border-radius: 19px;
+        font-size: 30px;
+    }
+}
