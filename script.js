@@ -1,8 +1,8 @@
 "use strict";
 
 (() => {
-    const API_URL = "https://divi-ai.onrender.com/api/web-search";
-    const AUTH_API = "https://divi-ai.onrender.com/api";
+    const API_URL = "[https://divi-ai.onrender.com/api/web-search](https://divi-ai.onrender.com/api/web-search)";
+    const AUTH_API = "[https://divi-ai.onrender.com/api](https://divi-ai.onrender.com/api)";
     const STORAGE_KEY = "diviAIConversations_v2";
     const MAX_CHATS = 50;
 
@@ -173,47 +173,46 @@
         showPage("homeHero");
     }
 
-    ```javascript
-async function authRequest(endpoint, payload = {}) {
-    const isStatusCheck = endpoint === "/auth/status";
+    async function authRequest(endpoint, payload = {}) {
+        const isStatusCheck = endpoint === "/auth/status";
 
-    const response = await fetch(`{AUTH_API}${endpoint}`, {
-        method: isStatusCheck ? "GET" : "POST",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        },
-        ...(isStatusCheck ? {} : {
-            body: JSON.stringify(payload)
-        })
-    });
+        const response = await fetch(`${AUTH_API}${endpoint}`, {
+            method: isStatusCheck ? "GET" : "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            ...(isStatusCheck ? {} : {
+                body: JSON.stringify(payload)
+            })
+        });
 
-    const text = await response.text();
-    let data = {};
+        const text = await response.text();
+        let data = {};
 
-    try {
-        data = text ? JSON.parse(text) : {};
-    } catch (error) {
-        data = { message: text };
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (error) {
+            data = { message: text };
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                data.message ||
+                data.detail ||
+                `Request failed (${response.status}).`
+            );
+        }
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        return data;
     }
 
-    if (!response.ok) {
-        throw new Error(
-            data.error ||
-            data.message ||
-            data.detail ||
-            `Request failed (${response.status}).`
-        );
-    }
-
-    if (data.error) {
-        throw new Error(data.error);
-    }
-
-    return data;
-}
-```
     async function checkAuthStatus(force = false) {
         if (authStatusChecked && !force) return authLoggedIn;
         if (authStatusPromise) return authStatusPromise;
@@ -1142,133 +1141,33 @@ async function authRequest(endpoint, payload = {}) {
                 }
             });
         }
-
-        window.addEventListener("resize", () => {
-            if (window.innerWidth > 760 && sidebar) {
-                sidebar.classList.remove("sidebar-open");
-
-                if (toggle) {
-                    toggle.setAttribute("aria-expanded", "false");
-                }
-            }
-        });
     }
 
     function closeSidebar() {
-        const sidebar = $("#sidebar");
         const toggle = $("#sidebarToggle");
+        const sidebar = $("#sidebar");
 
-        if (sidebar) sidebar.classList.remove("sidebar-open");
+        if (sidebar) {
+            sidebar.classList.remove("sidebar-open");
+        }
 
         if (toggle) {
             toggle.setAttribute("aria-expanded", "false");
         }
     }
 
-    /* VOICE INPUT */
+    /* INITIALIZATION */
 
-    function setupVoice() {
-        const button = $("#voiceButton");
-
-        if (!button) return;
-
-        const SpeechRecognition =
-            window.SpeechRecognition ||
-            window.webkitSpeechRecognition;
-
-        if (!SpeechRecognition) {
-            button.addEventListener("click", () => {
-                notify("Voice input is not supported in this browser.");
-            });
-
-            return;
-        }
-
-        recognition = new SpeechRecognition();
-        recognition.lang = "en-US";
-        recognition.interimResults = false;
-        recognition.continuous = false;
-
-        button.addEventListener("click", () => {
-            try {
-                recognition.start();
-            } catch (error) {
-                console.warn("Voice recognition could not start:", error);
-                notify("Please try voice input again.");
-            }
-        });
-
-        recognition.addEventListener("result", event => {
-            const input = $("#userInput");
-
-            if (input) {
-                input.value = event.results[0][0].transcript;
-                input.dispatchEvent(new Event("input", { bubbles: true }));
-                input.focus();
-            }
-        });
-
-        recognition.addEventListener("error", event => {
-            if (event.error !== "no-speech") {
-                notify("Voice input error: " + event.error);
-            }
-        });
-    }
-
-    /* INITIALIZE */
-
-    function init() {
+    document.addEventListener("DOMContentLoaded", () => {
         loadChats();
-
         setupNavigation();
+        setupAuth();
         setupChat();
         setupChatButtons();
-        setupVoice();
-        setupAuth();
 
-        const home = $("#homePage");
-        const app = $("#aiAppScreen");
-        const authScreen = $("#authScreen");
-
-        if (home) {
-            home.hidden = false;
-            home.style.display = "";
-        }
-
-        if (app) {
-            app.hidden = true;
-            app.style.display = "none";
-        }
-
-        if (authScreen) {
-            authScreen.hidden = true;
-            authScreen.style.display = "none";
-        }
-
-        document.body.classList.remove("chat-app");
-
-        const year = $("#copyrightYear");
-
-        if (year) {
-            year.textContent = new Date().getFullYear();
-        }
-
-        if (conversations.length) {
+        if (conversations.length && !currentChatId) {
             currentChatId = conversations[0].id;
         }
+    });
 
-        renderHistory();
-        renderMessages();
-        showPage("homeHero");
-
-        console.log(
-            "Divi AI loaded: chat, navigation, voice, and authentication initialized."
-        );
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init, { once: true });
-    } else {
-        init();
-    }
 })();
