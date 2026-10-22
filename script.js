@@ -1,6 +1,6 @@
 "use strict";
 
-;(() => {
+(() => {
     /* ==========================================
        CONFIGURATION
     ========================================== */
@@ -12,8 +12,6 @@
 
     let conversations = [];
     let currentChatId = null;
-    let activeStorageKey = null;
-
     let sending = false;
     let recognition = null;
 
@@ -31,7 +29,6 @@
     const createId = () =>
         Date.now().toString(36) +
         Math.random().toString(36).slice(2, 9);
-
 
     /* ==========================================
        NOTIFICATIONS
@@ -57,7 +54,6 @@
             notice.hidden = true;
         }, 3500);
     }
-
 
     /* ==========================================
        HOMEPAGE NAVIGATION
@@ -101,35 +97,8 @@
         });
     }
 
-
-    function returnToHome() {
-        const home = $("#homePage");
-        const app = $("#aiAppScreen");
-        const authScreen = $("#authScreen");
-
-        if (app) {
-            app.hidden = true;
-            app.style.display = "none";
-        }
-
-        if (authScreen) {
-            authScreen.hidden = true;
-            authScreen.style.display = "none";
-        }
-
-        if (home) {
-            home.hidden = false;
-            home.style.display = "";
-        }
-
-        document.body.classList.remove("chat-app");
-
-        showPage("homeHero");
-    }
-
-
     /* ==========================================
-       AUTHENTICATION MESSAGES
+       AUTHENTICATION
     ========================================== */
 
     function authMessage(formId, message, isError = false) {
@@ -141,14 +110,11 @@
 
         if (element) {
             element.textContent = message;
-            element.style.color = isError
-                ? "#dc2626"
-                : "#15803d";
+            element.style.color = isError ? "#dc2626" : "#15803d";
         } else if (message) {
             notify(message);
         }
     }
-
 
     function setAuthMode(mode) {
         const loginForm = $("#loginForm");
@@ -160,13 +126,8 @@
 
         const registering = mode === "register";
 
-        if (loginForm) {
-            loginForm.hidden = registering;
-        }
-
-        if (registerForm) {
-            registerForm.hidden = !registering;
-        }
+        if (loginForm) loginForm.hidden = registering;
+        if (registerForm) registerForm.hidden = !registering;
 
         if (title) {
             title.textContent = registering
@@ -196,18 +157,9 @@
                 : "register";
         }
 
-        const loginMessage = $("#loginMessage");
-        const registerMessage = $("#registerMessage");
-
-        if (loginMessage) {
-            loginMessage.textContent = "";
-        }
-
-        if (registerMessage) {
-            registerMessage.textContent = "";
-        }
+        authMessage("loginForm", "");
+        authMessage("registerForm", "");
     }
-
 
     function openAuthScreen(mode = "login") {
         const home = $("#homePage");
@@ -237,7 +189,6 @@
         setAuthMode(mode);
     }
 
-
     function closeAuthScreen() {
         const authScreen = $("#authScreen");
         const home = $("#homePage");
@@ -253,124 +204,19 @@
         }
 
         document.body.classList.remove("chat-app");
-
         showPage("homeHero");
     }
 
-
-    /* ==========================================
-       ACCOUNT-SPECIFIC CHAT STORAGE
-    ========================================== */
-
-    function getUserStorageKey(username) {
-        if (!username) {
-            return null;
-        }
-
-        return (
-            STORAGE_KEY +
-            "_" +
-            encodeURIComponent(String(username).trim())
-        );
-    }
-
-
-    function clearCurrentChatData() {
-        conversations = [];
-        currentChatId = null;
-        activeStorageKey = null;
-
-        renderHistory();
-        renderMessages();
-    }
-
-
-    function loadChats() {
-        if (!authLoggedIn || !authUsername) {
-            clearCurrentChatData();
-            return;
-        }
-
-        const newStorageKey = getUserStorageKey(authUsername);
-
-        if (!newStorageKey) {
-            clearCurrentChatData();
-            return;
-        }
-
-        activeStorageKey = newStorageKey;
-
-        try {
-            const saved = localStorage.getItem(activeStorageKey);
-            const parsed = saved ? JSON.parse(saved) : [];
-
-            conversations = Array.isArray(parsed)
-                ? parsed.filter(chat =>
-                    chat &&
-                    typeof chat.id === "string" &&
-                    Array.isArray(chat.messages)
-                ).slice(0, MAX_CHATS)
-                : [];
-
-            currentChatId = conversations.length
-                ? conversations[0].id
-                : null;
-
-        } catch (error) {
-            console.error(
-                "Unable to load chat history:",
-                error
-            );
-
-            conversations = [];
-            currentChatId = null;
-        }
-    }
-
-
-    function saveChats() {
-        if (!authLoggedIn || !activeStorageKey) {
-            return;
-        }
-
-        try {
-            localStorage.setItem(
-                activeStorageKey,
-                JSON.stringify(conversations)
-            );
-        } catch (error) {
-            console.error(
-                "Unable to save chat history:",
-                error
-            );
-
-            notify("Could not save conversation history.");
-        }
-    }
-
-
-    /* ==========================================
-       AUTHENTICATION API
-    ========================================== */
-
     async function authRequest(endpoint, payload = {}) {
-        const options = {
+        const response = await fetch(`${AUTH_API}${endpoint}`, {
             method: "POST",
             credentials: "include",
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
-            }
-        };
-
-        if (endpoint !== "/logout") {
-            options.body = JSON.stringify(payload);
-        }
-
-        const response = await fetch(
-            `${AUTH_API}${endpoint}`,
-            options
-        );
+            },
+            body: JSON.stringify(payload)
+        });
 
         const text = await response.text();
 
@@ -398,13 +244,12 @@
         return data;
     }
 
-
-    async function checkAuthStatus(force = false) {
-        if (!force && authStatusChecked) {
+    async function checkAuthStatus() {
+        if (authStatusChecked) {
             return authLoggedIn;
         }
 
-        if (!force && authStatusPromise) {
+        if (authStatusPromise) {
             return authStatusPromise;
         }
 
@@ -429,50 +274,27 @@
 
                 const data = await response.json();
 
-                const loggedIn = Boolean(
+                authLoggedIn = Boolean(
                     data.logged_in ??
                     data.authenticated ??
                     data.is_logged_in ??
                     data.loggedIn
                 );
 
-                const username = loggedIn
-                    ? String(data.username || "")
-                    : "";
-
-                const accountChanged =
-                    username !== authUsername ||
-                    loggedIn !== authLoggedIn;
-
-                authLoggedIn = loggedIn;
-                authUsername = username;
+                authUsername = data.username || "";
                 authStatusChecked = true;
-
-                if (accountChanged || !authLoggedIn) {
-                    loadChats();
-                    renderHistory();
-                    renderMessages();
-                }
 
                 updateAuthUI();
 
                 return authLoggedIn;
-
             } catch (error) {
-                console.error(
-                    "Could not check login status:",
-                    error
-                );
+                console.error("Could not check login status:", error);
 
                 authLoggedIn = false;
                 authUsername = "";
                 authStatusChecked = false;
 
-                clearCurrentChatData();
-                updateAuthUI();
-
                 return false;
-
             } finally {
                 authStatusPromise = null;
             }
@@ -481,9 +303,10 @@
         return authStatusPromise;
     }
 
-
     function updateAuthUI() {
-        $$("[data-auth-username]").forEach(element => {
+        const usernameElements = $$("[data-auth-username]");
+
+        usernameElements.forEach(element => {
             element.textContent = authUsername || "User";
         });
 
@@ -502,19 +325,13 @@
         }
     }
 
-
-    /* ==========================================
-       LOGIN AND REGISTRATION
-    ========================================== */
-
     function setupAuth() {
         $$("[data-auth-open]").forEach(button => {
             button.addEventListener("click", event => {
                 event.preventDefault();
 
-                openAuthScreen(
-                    button.dataset.authOpen || "login"
-                );
+                const mode = button.dataset.authOpen || "login";
+                openAuthScreen(mode);
             });
         });
 
@@ -528,12 +345,8 @@
         const switchButton = $("#authSwitchButton");
 
         if (switchButton) {
-            switchButton.addEventListener("click", event => {
-                event.preventDefault();
-
-                const mode =
-                    switchButton.dataset.authOpen || "register";
-
+            switchButton.addEventListener("click", () => {
+                const mode = switchButton.dataset.authOpen || "register";
                 setAuthMode(mode);
             });
         }
@@ -544,11 +357,8 @@
             loginForm.addEventListener("submit", async event => {
                 event.preventDefault();
 
-                const identifier =
-                    $("#loginIdentifier")?.value.trim();
-
-                const password =
-                    $("#loginPassword")?.value;
+                const identifier = $("#loginIdentifier")?.value.trim();
+                const password = $("#loginPassword")?.value;
 
                 if (!identifier || !password) {
                     authMessage(
@@ -577,65 +387,23 @@
                         password: password
                     });
 
-                   
-authLoggedIn = true;
-authUsername = data.username || identifier;
-authStatusChecked = true;
-authStatusPromise = null;
+                    authLoggedIn = true;
+                    authUsername = data.username || identifier;
+                    authStatusChecked = true;
+                    authStatusPromise = null;
 
-// Load this user's chat history.
-loadChats();
-updateAuthUI();
+                    updateAuthUI();
+                    loginForm.reset();
 
-loginForm.reset();
+                    notify("Login successful!");
 
-// Open the chat screen directly after successful login.
-const home = document.getElementById("homePage");
-const app = document.getElementById("aiAppScreen");
-const authScreen = document.getElementById("authScreen");
-
-if (home) {
-    home.hidden = true;
-    home.style.display = "none";
-}
-
-if (authScreen) {
-    authScreen.hidden = true;
-    authScreen.style.display = "none";
-}
-
-if (app) {
-    app.hidden = false;
-    app.style.display = "flex";
-    document.body.classList.add("chat-app");
-
-    if (!currentChatId || !getChat(currentChatId)) {
-        createNewChat();
-    } else {
-        renderHistory();
-        renderMessages();
-    }
-
-    closeSidebar();
-
-    const input = document.getElementById("userInput");
-    if (input) {
-        setTimeout(() => input.focus(), 100);
-    }
-
-    notify("Login successful!");
-} else {
-    notify("Login succeeded, but the chat screen was not found. Check the aiAppScreen element in index.html.");
-    openAuthScreen("login");
-}
-```
+                    await openDiviAI();
                 } catch (error) {
                     authMessage(
                         "loginForm",
                         error.message || "Login failed.",
                         true
                     );
-
                 } finally {
                     if (submitButton) {
                         submitButton.disabled = false;
@@ -650,11 +418,8 @@ if (app) {
             registerForm.addEventListener("submit", async event => {
                 event.preventDefault();
 
-                const username =
-                    $("#registerUsername")?.value.trim();
-
-                const password =
-                    $("#registerPassword")?.value;
+                const username = $("#registerUsername")?.value.trim();
+                const password = $("#registerPassword")?.value;
 
                 if (!username || !password) {
                     authMessage(
@@ -692,10 +457,7 @@ if (app) {
                     submitButton.disabled = true;
                 }
 
-                authMessage(
-                    "registerForm",
-                    "Creating your account..."
-                );
+                authMessage("registerForm", "Creating your account...");
 
                 try {
                     const data = await authRequest("/register", {
@@ -705,7 +467,17 @@ if (app) {
 
                     registerForm.reset();
 
+                    authLoggedIn = false;
+                    authUsername = "";
+                    authStatusChecked = false;
+                    authStatusPromise = null;
+
                     setAuthMode("login");
+
+                    authMessage(
+                        "loginForm",
+                        data.message || "Account created! Please log in."
+                    );
 
                     const loginIdentifier = $("#loginIdentifier");
 
@@ -713,21 +485,13 @@ if (app) {
                         loginIdentifier.value = username;
                     }
 
-                    authMessage(
-                        "loginForm",
-                        data.message ||
-                        "Account created! Please log in."
-                    );
-
                     notify("Account created. Please log in.");
-
                 } catch (error) {
                     authMessage(
                         "registerForm",
                         error.message || "Registration failed.",
                         true
                     );
-
                 } finally {
                     if (submitButton) {
                         submitButton.disabled = false;
@@ -748,13 +512,9 @@ if (app) {
                     authStatusChecked = true;
                     authStatusPromise = null;
 
-                    clearCurrentChatData();
                     updateAuthUI();
-
                     notify("You have logged out.");
-
                     openAuthScreen("login");
-
                 } catch (error) {
                     notify("Logout failed: " + error.message);
                 }
@@ -764,100 +524,114 @@ if (app) {
         checkAuthStatus();
     }
 
-
     /* ==========================================
        OPEN CHAT APPLICATION
     ========================================== */
 
-    
-async function openDiviAI() {
-    const home = document.getElementById("homePage");
-    const app = document.getElementById("aiAppScreen");
-    const authScreen = document.getElementById("authScreen");
+    async function openDiviAI() {
+        const home = $("#homePage");
+        const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
 
-    if (!app) {
-        notify("Chat screen not found. Check your index.html.");
-        return;
+        if (!app) {
+            notify("Chat screen not found. Check your index.html.");
+            return;
+        }
+
+        if (authScreen) {
+            const loggedIn = await checkAuthStatus();
+
+            if (!loggedIn) {
+                openAuthScreen("login");
+                return;
+            }
+        }
+
+        if (home) {
+            home.hidden = true;
+            home.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
+        }
+
+        app.hidden = false;
+        app.style.display = "flex";
+
+        document.body.classList.add("chat-app");
+
+        if (!currentChatId || !getChat(currentChatId)) {
+            createNewChat();
+        } else {
+            renderMessages();
+            renderHistory();
+        }
+
+        closeSidebar();
+
+        const input = $("#userInput");
+
+        if (input) {
+            setTimeout(() => input.focus(), 100);
+        }
     }
 
-    // Check the backend session before opening the app.
-    const loggedIn = await checkAuthStatus(true);
+    function returnToHome() {
+        const home = $("#homePage");
+        const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
 
-    if (!loggedIn || !authUsername) {
-        notify("Your login session could not be verified. Please log in again.");
-        openAuthScreen("login");
-        return;
+        if (app) {
+            app.hidden = true;
+            app.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
+        }
+
+        if (home) {
+            home.hidden = false;
+            home.style.display = "";
+        }
+
+        document.body.classList.remove("chat-app");
+
+        closeSidebar();
+        showPage("homeHero");
     }
 
-    // Load this account's conversations.
-    loadChats();
-    updateAuthUI();
-
-    if (home) {
-        home.hidden = true;
-        home.style.display = "none";
-    }
-
-    if (authScreen) {
-        authScreen.hidden = true;
-        authScreen.style.display = "none";
-    }
-
-    app.hidden = false;
-    app.style.display = "flex";
-
-    document.body.classList.add("chat-app");
-
-    if (!currentChatId || !getChat(currentChatId)) {
-        createNewChat();
-    } else {
-        renderMessages();
-        renderHistory();
-    }
-
-    closeSidebar();
-
-    const input = document.getElementById("userInput");
-
-    if (input) {
-        setTimeout(() => input.focus(), 100);
-    }
-}
-```
+    window.openDiviAI = openDiviAI;
+    window.returnToHome = returnToHome;
 
     /* ==========================================
-       HOMEPAGE BUTTONS
+       CONNECT HOMEPAGE BUTTONS
     ========================================== */
 
     function setupNavigation() {
         $$(".nav-tab").forEach(button => {
-            button.addEventListener("click", event => {
-                event.preventDefault();
+            button.addEventListener("click", () => {
                 showPage(button.dataset.page);
             });
         });
 
         $$("[data-open-page]").forEach(button => {
-            button.addEventListener("click", event => {
-                event.preventDefault();
+            button.addEventListener("click", () => {
                 showPage(button.dataset.openPage);
             });
         });
 
         $$(".open-ai-button, .hero-primary-button, .about-button, .contact-button")
             .forEach(button => {
-                button.addEventListener("click", event => {
-                    event.preventDefault();
-                    openDiviAI();
-                });
+                button.addEventListener("click", openDiviAI);
             });
 
         $$(".home-return-button, .chat-home-button")
             .forEach(button => {
-                button.addEventListener("click", event => {
-                    event.preventDefault();
-                    returnToHome();
-                });
+                button.addEventListener("click", returnToHome);
             });
 
         const year = $("#copyrightYear");
@@ -867,22 +641,45 @@ async function openDiviAI() {
         }
     }
 
-
     /* ==========================================
-       CHAT MANAGEMENT
+       CONVERSATION STORAGE
     ========================================== */
+
+    function loadChats() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const parsed = saved ? JSON.parse(saved) : [];
+
+            conversations = Array.isArray(parsed)
+                ? parsed.filter(chat =>
+                    chat &&
+                    typeof chat.id === "string" &&
+                    Array.isArray(chat.messages)
+                ).slice(0, MAX_CHATS)
+                : [];
+        } catch (error) {
+            console.error("Unable to load chat history:", error);
+            conversations = [];
+        }
+    }
+
+    function saveChats() {
+        try {
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(conversations)
+            );
+        } catch (error) {
+            console.error("Unable to save chat history:", error);
+            notify("Could not save conversation history.");
+        }
+    }
 
     function getChat(id) {
         return conversations.find(chat => chat.id === id) || null;
     }
 
-
     function createNewChat() {
-        if (!authLoggedIn || !activeStorageKey) {
-            notify("Please log in before creating a chat.");
-            return;
-        }
-
         const chat = {
             id: createId(),
             title: "New chat",
@@ -910,11 +707,8 @@ async function openDiviAI() {
         }
     }
 
-
     function deleteChat(id) {
-        conversations = conversations.filter(
-            chat => chat.id !== id
-        );
+        conversations = conversations.filter(chat => chat.id !== id);
 
         if (currentChatId === id) {
             currentChatId = conversations.length
@@ -922,17 +716,16 @@ async function openDiviAI() {
                 : null;
         }
 
-        saveChats();
-
         if (!currentChatId) {
+            saveChats();
             createNewChat();
             return;
         }
 
+        saveChats();
         renderHistory();
         renderMessages();
     }
-
 
     function clearHistory() {
         if (!conversations.length) {
@@ -953,11 +746,8 @@ async function openDiviAI() {
         notify("Conversation history cleared.");
     }
 
-
     function selectChat(id) {
-        if (!getChat(id)) {
-            return;
-        }
+        if (!getChat(id)) return;
 
         currentChatId = id;
 
@@ -966,44 +756,27 @@ async function openDiviAI() {
         closeSidebar();
     }
 
-
     /* ==========================================
-       RENDER CHAT HISTORY
+       RENDER HISTORY
     ========================================== */
 
     function renderHistory() {
         const container = $("#chatHistory");
 
-        if (!container) {
-            return;
-        }
+        if (!container) return;
 
         container.replaceChildren();
 
-        if (!authLoggedIn) {
-            const empty = document.createElement("p");
-
-            empty.className = "no-history";
-            empty.textContent = "Log in to view your conversations.";
-
-            container.appendChild(empty);
-            return;
-        }
-
         if (!conversations.length) {
             const empty = document.createElement("p");
-
             empty.className = "no-history";
-            empty.textContent =
-                "Your conversations will appear here.";
-
+            empty.textContent = "Your conversations will appear here.";
             container.appendChild(empty);
             return;
         }
 
         conversations.forEach(chat => {
             const row = document.createElement("div");
-
             row.className = "history-row";
 
             if (chat.id === currentChatId) {
@@ -1011,37 +784,27 @@ async function openDiviAI() {
             }
 
             const selectButton = document.createElement("button");
-
             selectButton.type = "button";
             selectButton.className = "history-item";
             selectButton.title = chat.title || "New chat";
 
             const icon = document.createElement("span");
-
             icon.className = "history-icon";
             icon.textContent = "💬";
 
             const title = document.createElement("span");
-
             title.className = "history-text";
             title.textContent = chat.title || "New chat";
 
             selectButton.append(icon, title);
-
-            selectButton.addEventListener("click", () => {
-                selectChat(chat.id);
-            });
+            selectButton.addEventListener("click", () => selectChat(chat.id));
 
             const deleteButton = document.createElement("button");
-
             deleteButton.type = "button";
             deleteButton.className = "delete-chat-button";
             deleteButton.textContent = "×";
             deleteButton.title = "Delete conversation";
-            deleteButton.setAttribute(
-                "aria-label",
-                "Delete conversation"
-            );
+            deleteButton.setAttribute("aria-label", "Delete conversation");
 
             deleteButton.addEventListener("click", event => {
                 event.stopPropagation();
@@ -1053,7 +816,6 @@ async function openDiviAI() {
         });
     }
 
-
     /* ==========================================
        RENDER MESSAGES
     ========================================== */
@@ -1062,9 +824,7 @@ async function openDiviAI() {
         const box = $("#chatBox");
         const welcome = $("#welcomeScreen");
 
-        if (!box) {
-            return;
-        }
+        if (!box) return;
 
         const chat = getChat(currentChatId);
         const messages = chat ? chat.messages : [];
@@ -1084,13 +844,10 @@ async function openDiviAI() {
         box.scrollTop = box.scrollHeight;
     }
 
-
     function addMessageToScreen(message, scroll = true) {
         const box = $("#chatBox");
 
-        if (!box) {
-            return;
-        }
+        if (!box) return;
 
         const welcome = $("#welcomeScreen");
 
@@ -1100,20 +857,14 @@ async function openDiviAI() {
 
         const row = document.createElement("div");
 
-        row.className =
-            "message " +
-            (message.role === "user"
-                ? "user-message"
-                : "ai-message");
+        row.className = "message " +
+            (message.role === "user" ? "user-message" : "ai-message");
 
         const avatar = document.createElement("div");
-
         avatar.className = "message-avatar";
-        avatar.textContent =
-            message.role === "user" ? "YOU" : "D";
+        avatar.textContent = message.role === "user" ? "YOU" : "D";
 
         const content = document.createElement("div");
-
         content.className = "message-content";
         content.textContent = message.content;
 
@@ -1127,22 +878,12 @@ async function openDiviAI() {
         return row;
     }
 
-
     function addMessage(role, content) {
-        if (!authLoggedIn || !activeStorageKey) {
-            notify("Please log in to use Divi AI.");
-            return null;
-        }
-
         let chat = getChat(currentChatId);
 
         if (!chat) {
             createNewChat();
             chat = getChat(currentChatId);
-        }
-
-        if (!chat) {
-            return null;
         }
 
         const message = {
@@ -1168,45 +909,33 @@ async function openDiviAI() {
         return message;
     }
 
-
     function showLoading() {
         const box = $("#chatBox");
 
-        if (!box) {
-            return null;
-        }
+        if (!box) return null;
 
         const row = document.createElement("div");
-
         row.className = "message ai-message loading-message";
         row.setAttribute("role", "status");
-        row.setAttribute(
-            "aria-label",
-            "Divi AI is thinking"
-        );
+        row.setAttribute("aria-label", "Divi AI is thinking");
 
         const avatar = document.createElement("div");
-
         avatar.className = "message-avatar";
         avatar.textContent = "D";
 
         const content = document.createElement("div");
-
         content.className = "message-content loading-content";
 
         const label = document.createElement("span");
-
         label.className = "loading-label";
         label.textContent = "Divi AI is thinking";
 
         const dots = document.createElement("span");
-
         dots.className = "loading-dots";
         dots.setAttribute("aria-hidden", "true");
 
         for (let i = 0; i < 3; i++) {
             const dot = document.createElement("span");
-
             dot.className = "loading-dot";
             dots.appendChild(dot);
         }
@@ -1220,7 +949,6 @@ async function openDiviAI() {
         return row;
     }
 
-
     /* ==========================================
        SEND MESSAGE TO BACKEND
     ========================================== */
@@ -1231,9 +959,7 @@ async function openDiviAI() {
         const history = (chat?.messages || [])
             .slice(-12)
             .map(message => ({
-                role: message.role === "assistant"
-                    ? "assistant"
-                    : "user",
+                role: message.role === "assistant" ? "assistant" : "user",
                 content: message.content
             }));
 
@@ -1292,24 +1018,14 @@ async function openDiviAI() {
         }
 
         throw new Error(
-            "The backend did not return an answer. " +
-            "Check its response format."
+            "The backend did not return an answer. Check its response format."
         );
     }
-
 
     async function sendMessage(text) {
         const question = String(text || "").trim();
 
-        if (!question || sending) {
-            return;
-        }
-
-        if (!authLoggedIn || !activeStorageKey) {
-            notify("Please log in before sending a message.");
-            openAuthScreen("login");
-            return;
-        }
+        if (!question || sending) return;
 
         if (!getChat(currentChatId)) {
             createNewChat();
@@ -1337,28 +1053,22 @@ async function openDiviAI() {
         try {
             const result = await askBackend(question);
 
-            if (loading) {
-                loading.remove();
-            }
+            if (loading) loading.remove();
 
             addMessage("assistant", result.answer);
             renderSources(result.sources);
-
         } catch (error) {
             console.error("Divi AI error:", error);
 
-            if (loading) {
-                loading.remove();
-            }
+            if (loading) loading.remove();
 
             addMessage(
                 "assistant",
                 "I couldn't get an answer from the server.\n\n" +
                 error.message +
-                "\n\nPlease check that the backend endpoint " +
-                "/api/web-search is working and its API key is configured."
+                "\n\nPlease check that the backend endpoint /api/web-search " +
+                "is working and its API key is configured."
             );
-
         } finally {
             sending = false;
 
@@ -1366,60 +1076,42 @@ async function openDiviAI() {
                 sendButton.disabled = false;
             }
 
-            if (input) {
-                input.focus();
-            }
+            if (input) input.focus();
         }
     }
-
-
-    /* ==========================================
-       SEARCH SOURCES
-    ========================================== */
 
     function renderSources(sources) {
         const box = $("#chatBox");
 
-        if (!box || !Array.isArray(sources) || !sources.length) {
-            return;
-        }
+        if (!box || !Array.isArray(sources) || !sources.length) return;
 
         const section = document.createElement("div");
-
         section.className = "search-results";
 
         const heading = document.createElement("h3");
-
         heading.textContent = "Sources";
         section.appendChild(heading);
 
         sources.slice(0, 6).forEach(source => {
             const url = source && source.url;
 
-            if (typeof url !== "string") {
-                return;
-            }
+            if (typeof url !== "string") return;
 
             try {
                 const parsed = new URL(url);
 
-                if (!["http:", "https:"].includes(parsed.protocol)) {
-                    return;
-                }
+                if (!["http:", "https:"].includes(parsed.protocol)) return;
 
                 const link = document.createElement("a");
-
                 link.className = "search-result-link";
                 link.href = parsed.href;
                 link.target = "_blank";
                 link.rel = "noopener noreferrer";
-                link.textContent =
-                    source.title || parsed.hostname;
+                link.textContent = source.title || parsed.hostname;
 
                 section.appendChild(link);
-
             } catch {
-                // Ignore invalid source URLs.
+                // Ignore invalid links.
             }
         });
 
@@ -1428,7 +1120,6 @@ async function openDiviAI() {
             box.scrollTop = box.scrollHeight;
         }
     }
-
 
     /* ==========================================
        CHAT FORM
@@ -1441,7 +1132,6 @@ async function openDiviAI() {
         if (form) {
             form.addEventListener("submit", event => {
                 event.preventDefault();
-
                 sendMessage(input ? input.value : "");
             });
         }
@@ -1449,7 +1139,6 @@ async function openDiviAI() {
         if (input) {
             input.addEventListener("input", () => {
                 input.style.height = "auto";
-
                 input.style.height =
                     Math.min(input.scrollHeight, 180) + "px";
             });
@@ -1472,14 +1161,11 @@ async function openDiviAI() {
         }
 
         $$("[data-suggestion]").forEach(button => {
-            button.addEventListener("click", event => {
-                event.preventDefault();
-
+            button.addEventListener("click", () => {
                 sendMessage(button.dataset.suggestion);
             });
         });
     }
-
 
     /* ==========================================
        CHAT CONTROL BUTTONS
@@ -1489,35 +1175,23 @@ async function openDiviAI() {
         const newChatButton = $("#newChatButton");
 
         if (newChatButton) {
-            newChatButton.addEventListener("click", event => {
-                event.preventDefault();
-                createNewChat();
-            });
+            newChatButton.addEventListener("click", createNewChat);
         }
 
         const clearButton = $("#clearHistoryButton");
 
         if (clearButton) {
-            clearButton.addEventListener("click", event => {
-                event.preventDefault();
-                clearHistory();
-            });
+            clearButton.addEventListener("click", clearHistory);
         }
 
         const toggle = $("#sidebarToggle");
         const sidebar = $("#sidebar");
 
         if (toggle && sidebar) {
-            toggle.addEventListener("click", event => {
-                event.preventDefault();
+            toggle.addEventListener("click", () => {
+                const opened = sidebar.classList.toggle("sidebar-open");
 
-                const opened =
-                    sidebar.classList.toggle("sidebar-open");
-
-                toggle.setAttribute(
-                    "aria-expanded",
-                    String(opened)
-                );
+                toggle.setAttribute("aria-expanded", String(opened));
             });
 
             document.addEventListener("click", event => {
@@ -1528,11 +1202,7 @@ async function openDiviAI() {
                     !toggle.contains(event.target)
                 ) {
                     sidebar.classList.remove("sidebar-open");
-
-                    toggle.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
+                    toggle.setAttribute("aria-expanded", "false");
                 }
             });
         }
@@ -1543,7 +1213,6 @@ async function openDiviAI() {
             }
         });
     }
-
 
     function closeSidebar() {
         const sidebar = $("#sidebar");
@@ -1558,7 +1227,6 @@ async function openDiviAI() {
         }
     }
 
-
     /* ==========================================
        VOICE INPUT
     ========================================== */
@@ -1566,43 +1234,29 @@ async function openDiviAI() {
     function setupVoice() {
         const button = $("#voiceButton");
 
-        if (!button) {
-            return;
-        }
+        if (!button) return;
 
         const SpeechRecognition =
             window.SpeechRecognition ||
             window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            button.addEventListener("click", event => {
-                event.preventDefault();
-
-                notify(
-                    "Voice input is not supported in this browser."
-                );
+            button.addEventListener("click", () => {
+                notify("Voice input is not supported in this browser.");
             });
-
             return;
         }
 
         recognition = new SpeechRecognition();
-
         recognition.lang = "en-US";
         recognition.interimResults = false;
         recognition.continuous = false;
 
-        button.addEventListener("click", event => {
-            event.preventDefault();
-
+        button.addEventListener("click", () => {
             try {
                 recognition.start();
             } catch (error) {
-                console.warn(
-                    "Voice recognition could not start:",
-                    error
-                );
-
+                console.warn("Voice recognition could not start:", error);
                 notify("Please try voice input again.");
             }
         });
@@ -1611,13 +1265,8 @@ async function openDiviAI() {
             const input = $("#userInput");
 
             if (input) {
-                input.value =
-                    event.results[0][0].transcript;
-
-                input.dispatchEvent(
-                    new Event("input", { bubbles: true })
-                );
-
+                input.value = event.results[0][0].transcript;
+                input.dispatchEvent(new Event("input", { bubbles: true }));
                 input.focus();
             }
         });
@@ -1629,14 +1278,12 @@ async function openDiviAI() {
         });
     }
 
-
     /* ==========================================
-       INITIALIZATION
+       INITIALIZE
     ========================================== */
 
     function init() {
-        // Do not load shared chat history before authentication.
-        clearCurrentChatData();
+        loadChats();
 
         setupNavigation();
         setupChat();
@@ -1671,6 +1318,10 @@ async function openDiviAI() {
             year.textContent = new Date().getFullYear();
         }
 
+        if (conversations.length) {
+            currentChatId = conversations[0].id;
+        }
+
         renderHistory();
         renderMessages();
         showPage("homeHero");
@@ -1680,17 +1331,9 @@ async function openDiviAI() {
         );
     }
 
-
-          // Initialize Divi AI when the page is ready.
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init, {
-            once: true
-        });
+        document.addEventListener("DOMContentLoaded", init, { once: true });
     } else {
         init();
     }
-
-    // Make the app-opening function available to HTML buttons.
-    window.openDiviAI = openDiviAI;
-
 })();
