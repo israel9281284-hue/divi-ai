@@ -1642,14 +1642,15 @@
     }
 
 
-    if (document.readyState === "loading") {
-        document.addEventListener(
-            "DOMContentLoaded",
-            init,
-            { once: true }
-        );
+       if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init, {
+            once: true
+        });
     } else {
         init();
     }
+
+    // Allow HTML buttons to open Divi AI.
+    window.openDiviAI = openDiviAI;
 
 })();
