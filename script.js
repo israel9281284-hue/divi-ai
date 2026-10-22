@@ -445,28 +445,44 @@
     }
 
     function showLoading() {
-        const box = $("#chatBox");
+    const box = $("#chatBox");
 
-        if (!box) return null;
+    if (!box) return null;
 
-        const row = document.createElement("div");
-        row.className = "message ai-message loading-message";
+    const row = document.createElement("div");
+    row.className = "message ai-message loading-message";
+    row.setAttribute("role", "status");
+    row.setAttribute("aria-label", "Divi AI is thinking");
 
-        const avatar = document.createElement("div");
-        avatar.className = "message-avatar";
-        avatar.textContent = "D";
+    const avatar = document.createElement("div");
+    avatar.className = "message-avatar";
+    avatar.textContent = "D";
 
-        const content = document.createElement("div");
-        content.className = "message-content";
-        content.textContent = "Divi AI is thinking…";
+    const content = document.createElement("div");
+    content.className = "message-content loading-content";
 
-        row.append(avatar, content);
-        box.appendChild(row);
-        box.scrollTop = box.scrollHeight;
+    const label = document.createElement("span");
+    label.className = "loading-label";
+    label.textContent = "Divi AI is thinking";
 
-        return row;
+    const dots = document.createElement("span");
+    dots.className = "loading-dots";
+    dots.setAttribute("aria-hidden", "true");
+
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.className = "loading-dot";
+        dots.appendChild(dot);
     }
 
+    content.append(label, dots);
+    row.append(avatar, content);
+    box.appendChild(row);
+
+    box.scrollTop = box.scrollHeight;
+
+    return row;
+}
     /* ==========================================
        SEND MESSAGE TO YOUR BACKEND
     ========================================== */
