@@ -18,32 +18,25 @@ from auth import (
 # APPLICATION CONFIGURATION
 # ==========================================
 
+```python
 app = Flask(__name__)
 
 app.secret_key = os.environ.get("SESSION_SECRET")
 
 if not app.secret_key:
-    app.logger.warning(
-        "SESSION_SECRET is not configured. "
-        "Set a strong secret in your Render environment variables."
+    raise RuntimeError(
+        "SESSION_SECRET is missing. "
+        "Set it in your Render environment variables."
     )
-    app.secret_key = "development-only-change-this-secret"
 
-# GitHub Pages frontend.
-CORS(
-    app,
-    supports_credentials=True,
-    origins=[
-        "https://israel9281284-hue.github.io",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ]
+# Allow the browser to send the login session cookie.
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_PATH="/"
 )
-
-# Initialize the users database.
-init_db()
-
-
+```
 # ==========================================
 # HOME / HEALTH CHECK
 # ==========================================
