@@ -2797,3 +2797,128 @@ body.chat-app {
     }
 }
 ```
+```css
+/* DIVI AI LOGIN AND SIGNUP TEST */
+
+#authScreen:not([hidden]) {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+    background: #e0f2fe !important;
+    font-family: Arial, sans-serif !important;
+}
+
+#authScreen .auth-card {
+    width: 100% !important;
+    max-width: 420px !important;
+    padding: 35px !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    border: 1px solid #dbeafe !important;
+    border-radius: 20px !important;
+    box-shadow: 0 15px 50px rgba(37, 99, 235, 0.18) !important;
+}
+
+#authScreen .auth-logo {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 60px !important;
+    height: 60px !important;
+    margin: 0 auto 20px !important;
+    border-radius: 16px !important;
+    background: #2563eb !important;
+    color: white !important;
+    font-size: 28px !important;
+    font-weight: bold !important;
+}
+
+#authScreen #authTitle {
+    color: #0f172a !important;
+    font-size: 28px !important;
+    text-align: center !important;
+}
+
+#authScreen #authDescription {
+    margin-bottom: 25px !important;
+    color: #64748b !important;
+    text-align: center !important;
+}
+
+#authScreen #loginForm label,
+#authScreen #registerForm label {
+    display: block !important;
+    margin: 12px 0 7px !important;
+    color: #334155 !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+}
+
+#authScreen #loginForm input,
+#authScreen #registerForm input {
+    display: block !important;
+    width: 100% !important;
+    min-height: 47px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    font-size: 14px !important;
+}
+
+#authScreen #loginForm input:focus,
+#authScreen #registerForm input:focus {
+    border-color: #2563eb !important;
+    outline: 2px solid #bfdbfe !important;
+}
+
+#authScreen .auth-submit-button {
+    width: 100% !important;
+    min-height: 48px !important;
+    margin-top: 20px !important;
+    border: none !important;
+    border-radius: 10px !important;
+    background: #2563eb !important;
+    color: white !important;
+    font-size: 15px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+}
+
+#authScreen .auth-submit-button:hover {
+    background: #1d4ed8 !important;
+}
+
+#authScreen .auth-switch {
+    margin-top: 22px !important;
+    color: #64748b !important;
+    text-align: center !important;
+}
+
+#authScreen #authSwitchButton {
+    border: none !important;
+    background: transparent !important;
+    color: #2563eb !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+}
+
+#authScreen[hidden],
+#authScreen #loginForm[hidden],
+#authScreen #registerForm[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 480px) {
+    #authScreen .auth-card {
+        padding: 25px 20px !important;
+    }
+}
+```
