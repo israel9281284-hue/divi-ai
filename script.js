@@ -207,43 +207,46 @@
         showPage("homeHero");
     }
 
-    async function authRequest(endpoint, payload = {}) {
-        const response = await fetch(`${AUTH_API}${endpoint}`, {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+    ```javascript
+async function authRequest(endpoint, payload = {}) {
+    const response = await fetch(`${AUTH_API}${endpoint}`, {
+        method: endpoint === "/auth/status" ? "GET" : "POST",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        ...(endpoint === "/auth/status"
+            ? {}
+            : { body: JSON.stringify(payload) })
+    });
 
-        const text = await response.text();
+    const text = await response.text();
 
-        let data = {};
+    let data = {};
 
-        try {
-            data = text ? JSON.parse(text) : {};
-        } catch {
-            data = { message: text };
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.error ||
-                data.message ||
-                data.detail ||
-                `Request failed (${response.status}).`
-            );
-        }
-
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
-        return data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = { message: text };
     }
 
+    if (!response.ok) {
+        throw new Error(
+            data.error ||
+            data.message ||
+            data.detail ||
+            `Request failed (${response.status}).`
+        );
+    }
+
+    if (data.error) {
+        throw new Error(data.error);
+    }
+
+    return data;
+}
+```
     async function checkAuthStatus() {
         if (authStatusChecked) {
             return authLoggedIn;
