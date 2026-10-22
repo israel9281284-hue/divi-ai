@@ -21,8 +21,13 @@ from auth import (
 ```python
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("SESSION_SECRET")
+CORS(
+    app,
+    supports_credentials=True,
+    origins=["https://israel9281284-hue.github.io"]
+)
 
+app.secret_key = os.environ.get("SESSION_SECRET")
 if not app.secret_key:
     raise RuntimeError(
         "SESSION_SECRET is missing. "
