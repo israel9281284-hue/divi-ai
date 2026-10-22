@@ -538,15 +538,10 @@
             return;
         }
 
-        if (authScreen) {
-            const loggedIn = await checkAuthStatus();
-
-            if (!loggedIn) {
-                openAuthScreen("login");
-                return;
-            }
-        }
-
+       if (authScreen && !authLoggedIn) {
+    openAuthScreen("login");
+    return;
+}
         if (home) {
             home.hidden = true;
             home.style.display = "none";
