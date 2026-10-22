@@ -2922,3 +2922,276 @@ body.chat-app {
     }
 }
 ```
+/* ==========================================
+   DIVI AI — FINAL VISUAL UPGRADE
+========================================== */
+
+/* Smooth, consistent appearance */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+input,
+textarea {
+    transition-duration: 0.2s;
+}
+
+/* ==========================================
+   LOGIN AND SIGNUP SCREEN
+========================================== */
+
+#authScreen:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+    background:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(56, 189, 248, 0.30),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(37, 99, 235, 0.18),
+            transparent 35%
+        ),
+        linear-gradient(135deg, #e0f2fe, #f8fbff 55%, #dbeafe);
+}
+
+#authScreen .auth-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 42px 36px;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow:
+        0 30px 80px rgba(7, 89, 133, 0.13),
+        0 5px 18px rgba(37, 99, 235, 0.06);
+    backdrop-filter: blur(18px);
+}
+
+#authScreen .auth-logo {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 24px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #7dd3fc, #0284c7, #1d4ed8);
+    box-shadow: 0 12px 28px rgba(2, 132, 199, 0.25);
+    color: white;
+    font-size: 32px;
+}
+
+#authScreen #authTitle {
+    margin-bottom: 12px;
+    color: #0c3553;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    text-align: center;
+}
+
+#authScreen #authDescription {
+    margin-bottom: 30px;
+    color: #68839a;
+    font-size: 14px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+#authScreen #loginForm,
+#authScreen #registerForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#authScreen #loginForm[hidden],
+#authScreen #registerForm[hidden] {
+    display: none !important;
+}
+
+#authScreen #loginForm label,
+#authScreen #registerForm label {
+    margin-top: 8px;
+    color: #294b65;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#authScreen #loginForm input,
+#authScreen #registerForm input {
+    width: 100%;
+    min-height: 51px;
+    padding: 14px 15px;
+    border: 1px solid #d2e5f3;
+    border-radius: 13px;
+    background: #f6fbff;
+    color: #17364d;
+    font-size: 14px;
+    outline: none;
+}
+
+#authScreen #loginForm input:focus,
+#authScreen #registerForm input:focus {
+    border-color: #38bdf8;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+}
+
+#authScreen .auth-submit-button {
+    min-height: 52px;
+    margin-top: 18px;
+    border: none;
+    border-radius: 13px;
+    background: linear-gradient(120deg, #38bdf8, #0284c7, #2563eb);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 9px 22px rgba(2, 132, 199, 0.20);
+}
+
+#authScreen .auth-submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 13px 28px rgba(2, 132, 199, 0.28);
+}
+
+#authScreen .auth-switch {
+    margin-top: 25px;
+    color: #6b8296;
+    font-size: 13px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+#authScreen #authSwitchButton {
+    color: #0284c7;
+    font-weight: 800;
+}
+
+#authScreen .auth-back-button {
+    border-radius: 10px;
+    background: #eff8ff;
+    color: #075985;
+}
+
+/* ==========================================
+   CHAT INTERFACE ENHANCEMENTS
+========================================== */
+
+.chat-app-screen,
+.app {
+    background-color: #f0f9ff;
+}
+
+.sidebar {
+    border-right: 1px solid #cce8f8;
+    background: linear-gradient(180deg, #e5f5ff, #f2f9ff);
+}
+
+.logo-icon {
+    border-radius: 15px;
+    box-shadow: 0 7px 20px rgba(2, 132, 199, 0.22);
+}
+
+.new-chat {
+    border-color: #bae6fd;
+    border-radius: 13px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.05);
+}
+
+.new-chat:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 7px 18px rgba(2, 132, 199, 0.10);
+}
+
+.history-row {
+    border: 1px solid transparent;
+}
+
+.history-row.selected {
+    border-color: #a5dcf8;
+    background: #d6efff;
+}
+
+.topbar {
+    border-bottom: 1px solid #d9edf9;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.topbar h1 {
+    color: #075985;
+    font-weight: 800;
+}
+
+.welcome-icon {
+    border-radius: 23px;
+    box-shadow: 0 15px 35px rgba(2, 132, 199, 0.22);
+}
+
+.welcome h2 {
+    color: #075985;
+    font-weight: 800;
+}
+
+.suggestions button {
+    border-color: #d1eafa;
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 5px 18px rgba(14, 116, 144, 0.035);
+}
+
+.suggestions button:hover {
+    border-color: #7dd3fc;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(14, 116, 144, 0.09);
+}
+
+.input-area {
+    border-color: #c4e4f5;
+    border-radius: 21px;
+    box-shadow: 0 8px 30px rgba(14, 116, 144, 0.09);
+}
+
+.input-area:focus-within {
+    border-color: #38bdf8;
+    box-shadow: 0 8px 30px rgba(14, 165, 233, 0.14);
+}
+
+.send-button {
+    border-radius: 13px;
+    background: linear-gradient(135deg, #38bdf8, #0284c7);
+}
+
+.user-message .message-content {
+    border-color: #b8e5fb;
+    border-radius: 17px;
+    background: linear-gradient(135deg, #e4f6ff, #d5efff);
+}
+
+/* ==========================================
+   SMALL SCREEN IMPROVEMENTS
+========================================== */
+
+@media (max-width: 480px) {
+    #authScreen {
+        padding: 16px;
+    }
+
+    #authScreen .auth-card {
+        padding: 30px 23px;
+        border-radius: 22px;
+    }
+
+    #authScreen #authTitle {
+        font-size: 26px;
+    }
+}
