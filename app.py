@@ -1,8 +1,12 @@
+```python
 import os
-import requests
+import sqlite3
+from functools import wraps
 
-from flask import Flask, request, jsonify, session
+import requests
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from auth import (
     init_db,
@@ -13,109 +17,41 @@ from auth import (
     current_username,
 )
 
-
-# =========================================================
-# FLASK APPLICATION
-# =========================================================
+# ==================================================
+# DIVI AI CONFIGURATION
+# ==================================================
 
 app = Flask(__name__)
 
-# Allow the GitHub Pages frontend to communicate with Render.
-CORS(
-    app,
-    supports_credentials=True,
-    origins=[
-        "https://israel9281284-hue.github.io"
-    ],
-)
-
-# Configure the session secret in Render's environment variables.
 app.secret_key = os.environ.get("SESSION_SECRET")
 
 if not app.secret_key:
     raise RuntimeError(
-        "SESSION_SECRET is missing. "
-        "Set it in your Render environment variables."
+        "SESSION_SECRET is missing. Add it in Render Environment Variables."
     )
 
-# Allow secure session cookies between the frontend and backend.
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_PATH="/",
+FRONTEND_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "FRONTEND_ORIGINS",
+        "https://divi-ai.onrender.com"
+    ).split(",")
+    if origin.strip()
+]
+
+CORS(
+    app,
+    supports_credentials=True,
+    origins=FRONTEND_ORIGINS,
 )
 
-# Create the users database table if it does not exist.
+# Initialize the user database.
 init_db()
 
 
-# =========================================================
-# TAVILY CONFIGURATION
-# =========================================================
-
-TAVILY_API_URL = "https://api.tavily.com/search"
-
-
-def tavily_search(query):
-    """Search the web using the Tavily API."""
-
-    api_key = os.environ.get("TAVILY_API_KEY")
-
-    if not api_key:
-        raise RuntimeError(
-            "Tavily API key is not configured in Render."
-        )
-
-    response = requests.post(
-        TAVILY_API_URL,
-        json={
-            "api_key": api_key,
-            "query": query,
-            "search_depth": "basic",
-            "max_results": 5,
-            "include_answer": True,
-        },
-        timeout=30,
-    )
-
-    response.raise_for_status()
-
-    return response.json()
-
-
-# =========================================================
-# HELPER FUNCTIONS
-# =========================================================
-
-def require_login():
-    """Return an error response if the user is not logged in."""
-
-    if not is_logged_in():
-        return jsonify({
-            "success": False,
-            "error": "Please log in first.",
-            "message": "Please log in first.",
-        }), 401
-
-    return None
-
-
-def get_error_message(error):
-    """Return a readable error message."""
-
-    if isinstance(error, requests.exceptions.Timeout):
-        return "The search service took too long to respond."
-
-    if isinstance(error, requests.exceptions.RequestException):
-        return "Could not connect to the search service."
-
-    return str(error)
-
-
-# =========================================================
+# ==================================================
 # HOME / HEALTH CHECK
-# =========================================================
+# ==================================================
 
 @app.route("/", methods=["GET"])
 def home():
@@ -125,17 +61,43 @@ def home():
         "endpoints": [
             "/api/register",
             "/api/login",
-            "/api/auth/status",
             "/api/logout",
+            "/api/auth/status",
             "/api/web-search",
-            "/api/voice-command",
         ],
-    })
+    }), 200
 
 
-# =========================================================
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"}), 200
+
+
+# ==================================================
+# AUTHENTICATION STATUS
+# ==================================================
+
+@app.route("/api/auth/status", methods=["GET"])
+def auth_status():
+    if is_logged_in():
+        return jsonify({
+            "logged_in": True,
+            "username": current_username(),
+        }), 200
+
+    return jsonify({"logged_in": False}), 200
+
+
+# Also support the alternate status route if older
+# frontend code calls /api/login/status.
+@app.route("/api/login/status", methods=["GET"])
+def login_status():
+    return auth_status()
+
+
+# ==================================================
 # REGISTER
-# =========================================================
+# ==================================================
 
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -147,32 +109,28 @@ def register():
     if not username or not password:
         return jsonify({
             "success": False,
-            "error": "Please enter a username and password.",
-            "message": "Please enter a username and password.",
+            "error": "Username and password are required.",
         }), 400
 
     if len(username) < 3:
         return jsonify({
             "success": False,
-            "error": "Username must contain at least 3 characters.",
-            "message": "Username must contain at least 3 characters.",
+            "error": "Username must be at least 3 characters.",
         }), 400
 
     if len(password) < 8:
         return jsonify({
             "success": False,
-            "error": "Password must contain at least 8 characters.",
-            "message": "Password must contain at least 8 characters.",
+            "error": "Password must be at least 8 characters.",
         }), 400
 
     try:
-        created = create_user(username, password)
+        result = create_user(username, password)
 
-        if not created:
+        if result is False or result is None:
             return jsonify({
                 "success": False,
-                "error": "That username may already exist.",
-                "message": "That username may already exist.",
+                "error": "Username may already exist.",
             }), 409
 
         return jsonify({
@@ -180,103 +138,100 @@ def register():
             "message": "Account created successfully. You can now log in.",
         }), 201
 
+    except sqlite3.IntegrityError:
+        return jsonify({
+            "success": False,
+            "error": "That username is already registered.",
+        }), 409
+
     except Exception:
         app.logger.exception("Registration failed")
-
         return jsonify({
             "success": False,
             "error": "Registration failed. Please try again.",
-            "message": "Registration failed. Please try again.",
         }), 500
 
 
-# =========================================================
+# ==================================================
 # LOGIN
-# =========================================================
+# ==================================================
 
 @app.route("/api/login", methods=["POST"])
-def api_login():
+def login():
     data = request.get_json(silent=True) or {}
 
-    username = (data.get("username") or data.get("identifier") or "").strip()
-    password = data.get("password") or ""
+    username = str(data.get("username", "")).strip()
+    password = str(data.get("password", ""))
 
     if not username or not password:
         return jsonify({
             "success": False,
-            "error": "Username and password are required."
+            "error": "Username and password are required.",
         }), 400
 
-    if not login_user(username, password):
+    try:
+        result = login_user(username, password)
+
+        if not result:
+            return jsonify({
+                "success": False,
+                "error": "Invalid username or password.",
+            }), 401
+
+        session.clear()
+        session["username"] = username
+        session.permanent = True
+
+        return jsonify({
+            "success": True,
+            "logged_in": True,
+            "username": username,
+            "message": "Login successful.",
+        }), 200
+
+    except Exception:
+        app.logger.exception("Login failed")
         return jsonify({
             "success": False,
-            "logged_in": False,
-            "error": "Incorrect username or password."
-        }), 401
-
-    return jsonify({
-        "success": True,
-        "logged_in": True,
-        "username": current_username()
-    }), 200
-# =========================================================
-# CHECK LOGIN STATUS
-# =========================================================
-
-@app.route("/api/auth/status", methods=["GET"])
-def auth_status():
-    logged_in = is_logged_in()
-
-    return jsonify({
-        "success": True,
-        "logged_in": logged_in,
-        "authenticated": logged_in,
-        "username": current_username() if logged_in else None,
-    }), 200
+            "error": "Login failed. Please try again.",
+        }), 500
 
 
-# =========================================================
+# ==================================================
 # LOGOUT
-# =========================================================
+# ==================================================
 
 @app.route("/api/logout", methods=["POST"])
 def logout():
-    logout_user()
+    try:
+        logout_user()
+    finally:
+        session.clear()
 
-    response = jsonify({
+    return jsonify({
         "success": True,
         "logged_in": False,
-        "message": "You have been logged out.",
-    })
-
-    response.status_code = 200
-    response.delete_cookie(
-        "session",
-        path="/",
-        secure=True,
-        httponly=True,
-        samesite="None",
-    )
-
-    return response
+        "message": "Logged out successfully.",
+    }), 200
 
 
-# =========================================================
+# ==================================================
 # WEB SEARCH
-# =========================================================
+# ==================================================
 
 @app.route("/api/web-search", methods=["POST"])
 def web_search():
-    login_error = require_login()
-
-    if login_error:
-        return login_error
+    if not is_logged_in():
+        return jsonify({
+            "success": False,
+            "error": "Please log in first.",
+        }), 401
 
     data = request.get_json(silent=True) or {}
 
     query = str(
         data.get("query")
-        or data.get("search_query")
+        or data.get("q")
         or data.get("message")
         or ""
     ).strip()
@@ -285,122 +240,66 @@ def web_search():
         return jsonify({
             "success": False,
             "error": "Please enter something to search for.",
-            "message": "Please enter something to search for.",
         }), 400
 
+    api_key = os.environ.get("TAVILY_API_KEY")
+
+    if not api_key:
+        return jsonify({
+            "success": False,
+            "error": "Tavily API key is not configured.",
+        }), 503
+
     try:
-        search_data = tavily_search(query)
+        response = requests.post(
+            "https://api.tavily.com/search",
+            json={
+                "api_key": api_key,
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 5,
+                "include_answer": True,
+            },
+            timeout=30,
+        )
 
-        answer = search_data.get("answer") or ""
-        results = search_data.get("results") or []
-
-        # Provide a readable answer if Tavily does not return one.
-        if not answer and results:
-            answer = "\n\n".join(
-                (
-                    f"{item.get('title', 'Search result')}\n"
-                    f"{item.get('content', '')}\n"
-                    f"Source: {item.get('url', '')}"
-                )
-                for item in results
+        if not response.ok:
+            app.logger.error(
+                "Tavily returned HTTP %s",
+                response.status_code,
             )
+            return jsonify({
+                "success": False,
+                "error": "The web search service could not complete your request.",
+            }), 502
+
+        result = response.json()
 
         return jsonify({
             "success": True,
             "query": query,
-            "answer": answer,
-            "response": answer,
-            "results": results,
+            "answer": result.get("answer") or "",
+            "results": result.get("results", []),
         }), 200
 
-    except requests.exceptions.HTTPError as error:
-        app.logger.error("Tavily HTTP error: %s", error)
-
+    except requests.RequestException:
+        app.logger.exception("Web search request failed")
         return jsonify({
             "success": False,
-            "error": "The web search service rejected the request. "
-                     "Check your Tavily API key and account.",
-            "message": "Web search failed. Please try again.",
+            "error": "Unable to connect to the web search service.",
         }), 502
 
     except Exception:
-        app.logger.exception("Web search failed")
-
+        app.logger.exception("Unexpected web search error")
         return jsonify({
             "success": False,
-            "error": "Web search is temporarily unavailable.",
-            "message": "Web search is temporarily unavailable.",
+            "error": "An unexpected search error occurred.",
         }), 500
 
 
-# =========================================================
-# VOICE COMMAND
-# =========================================================
-
-@app.route("/api/voice-command", methods=["POST"])
-def voice_command():
-    login_error = require_login()
-
-    if login_error:
-        return login_error
-
-    data = request.get_json(silent=True) or {}
-
-    command = str(
-        data.get("command")
-        or data.get("query")
-        or data.get("message")
-        or ""
-    ).strip()
-
-    if not command:
-        return jsonify({
-            "success": False,
-            "error": "Please provide a voice command.",
-            "message": "Please provide a voice command.",
-        }), 400
-
-    try:
-        # Use Tavily to find information related to the command.
-        search_data = tavily_search(command)
-
-        answer = search_data.get("answer") or ""
-        results = search_data.get("results") or []
-
-        if not answer and results:
-            answer = "\n\n".join(
-                (
-                    f"{item.get('title', 'Search result')}\n"
-                    f"{item.get('content', '')}\n"
-                    f"Source: {item.get('url', '')}"
-                )
-                for item in results
-            )
-
-        return jsonify({
-            "success": True,
-            "status": "success",
-            "input": command,
-            "command": command,
-            "response": answer,
-            "answer": answer,
-            "results": results,
-        }), 200
-
-    except Exception:
-        app.logger.exception("Voice command failed")
-
-        return jsonify({
-            "success": False,
-            "status": "error",
-            "error": "Could not process the voice command.",
-            "message": "Could not process the voice command.",
-        }), 500
-
-
-# =========================================================
+# ==================================================
 # ERROR HANDLERS
-# =========================================================
+# ==================================================
 
 @app.errorhandler(404)
 def not_found(error):
@@ -414,19 +313,18 @@ def not_found(error):
 def method_not_allowed(error):
     return jsonify({
         "success": False,
-        "error": "This request method is not allowed.",
+        "error": "This HTTP method is not supported for this endpoint.",
     }), 405
 
 
-# =========================================================
-# START SERVER
-# =========================================================
+# ==================================================
+# LOCAL DEVELOPMENT
+# ==================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-
     app.run(
         host="0.0.0.0",
-        port=port,
+        port=int(os.environ.get("PORT", 5000)),
         debug=False,
     )
+```
