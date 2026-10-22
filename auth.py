@@ -1,56 +1,58 @@
+```python
 import os
 import sqlite3
+
 from flask import session
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DATABASE = "users.db"
+
+# Store the database alongside this Python file.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "users.db")
 
 
 def init_db():
-    conn = sqlite3.connect(DATABASE)
-
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        )
-    """)
-
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(DATABASE) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )
+        """)
+        conn.commit()
 
 
 def create_user(username, password):
-    conn = sqlite3.connect(DATABASE)
+    username = username.strip()
+
+    if not username or not password:
+        return False
 
     try:
         hashed_password = generate_password_hash(password)
 
-        conn.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
-            (username, hashed_password)
-        )
+        with sqlite3.connect(DATABASE) as conn:
+            conn.execute(
+                "INSERT INTO users (username, password) VALUES (?, ?)",
+                (username, hashed_password)
+            )
+            conn.commit()
 
-        conn.commit()
         return True
 
     except sqlite3.IntegrityError:
         return False
 
-    finally:
-        conn.close()
-
 
 def login_user(username, password):
-    conn = sqlite3.connect(DATABASE)
+    username = username.strip()
 
-    user = conn.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (username,)
-    ).fetchone()
-
-    conn.close()
+    with sqlite3.connect(DATABASE) as conn:
+        user = conn.execute(
+            "SELECT id, username, password FROM users WHERE username = ?",
+            (username,)
+        ).fetchone()
 
     if user and check_password_hash(user[2], password):
         session["user_id"] = user[0]
@@ -70,3 +72,4 @@ def is_logged_in():
 
 def current_username():
     return session.get("username")
+```
