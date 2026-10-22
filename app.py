@@ -195,51 +195,30 @@ def register():
 # =========================================================
 
 @app.route("/api/login", methods=["POST"])
-def login():
+def api_login():
     data = request.get_json(silent=True) or {}
 
-    # Support the field names used by the existing frontend.
-    username = str(
-        data.get("username")
-        or data.get("identifier")
-        or ""
-    ).strip()
-
-    password = str(data.get("password", ""))
+    username = (data.get("username") or data.get("identifier") or "").strip()
+    password = data.get("password") or ""
 
     if not username or not password:
         return jsonify({
             "success": False,
-            "error": "Please enter your username and password.",
-            "message": "Please enter your username and password.",
+            "error": "Username and password are required."
         }), 400
 
-    try:
-        if login_user(username, password):
-            return jsonify({
-                "success": True,
-                "logged_in": True,
-                "username": current_username(),
-                "message": "Login successful.",
-            }), 200
-
+    if not login_user(username, password):
         return jsonify({
             "success": False,
             "logged_in": False,
-            "error": "Incorrect username or password.",
-            "message": "Incorrect username or password.",
+            "error": "Incorrect username or password."
         }), 401
 
-    except Exception:
-        app.logger.exception("Login failed")
-
-        return jsonify({
-            "success": False,
-            "error": "A server error occurred while logging in.",
-            "message": "A server error occurred while logging in.",
-        }), 500
-
-
+    return jsonify({
+        "success": True,
+        "logged_in": True,
+        "username": current_username()
+    }), 200
 # =========================================================
 # CHECK LOGIN STATUS
 # =========================================================
