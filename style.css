@@ -3478,3 +3478,20 @@ textarea {
         font-size: 30px;
     }
 }
+/* DIVI AI — NAVY BLUE LOGIN BUTTON */
+
+#authScreen .auth-submit-button {
+    background: #001f4d !important;
+    color: #ffffff !important;
+    border: 1px solid #001f4d !important;
+    border-radius: 12px;
+    box-shadow: 0 5px 14px rgba(0, 31, 77, 0.18);
+    font-weight: 700;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#authScreen .auth-submit-button:hover {
+    background: #003366 !important;
+    border-color: #003366 !important;
+    transform: translateY(-1px);
+}
