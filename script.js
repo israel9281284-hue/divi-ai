@@ -577,21 +577,58 @@
                         password: password
                     });
 
-                    authLoggedIn = true;
-                    authUsername = data.username || identifier;
-                    authStatusChecked = true;
-                    authStatusPromise = null;
+                   ```javascript
+authLoggedIn = true;
+authUsername = data.username || identifier;
+authStatusChecked = true;
+authStatusPromise = null;
 
-                    // Load the correct account's chat history.
-                    loadChats();
-                    updateAuthUI();
+// Load this user's chat history.
+loadChats();
+updateAuthUI();
 
-                    loginForm.reset();
+loginForm.reset();
 
-                    notify("Login successful!");
+// Open the chat screen directly after successful login.
+const home = document.getElementById("homePage");
+const app = document.getElementById("aiAppScreen");
+const authScreen = document.getElementById("authScreen");
 
-                    await openDiviAI();
+if (home) {
+    home.hidden = true;
+    home.style.display = "none";
+}
 
+if (authScreen) {
+    authScreen.hidden = true;
+    authScreen.style.display = "none";
+}
+
+if (app) {
+    app.hidden = false;
+    app.style.display = "flex";
+    document.body.classList.add("chat-app");
+
+    if (!currentChatId || !getChat(currentChatId)) {
+        createNewChat();
+    } else {
+        renderHistory();
+        renderMessages();
+    }
+
+    closeSidebar();
+
+    const input = document.getElementById("userInput");
+    if (input) {
+        setTimeout(() => input.focus(), 100);
+    }
+
+    notify("Login successful!");
+} else {
+    notify("Login succeeded, but the chat screen was not found. Check the aiAppScreen element in index.html.");
+    openAuthScreen("login");
+}
+```
                 } catch (error) {
                     authMessage(
                         "loginForm",
