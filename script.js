@@ -8,11 +8,12 @@
     const API_URL = "https://divi-ai.onrender.com/api/web-search";
     const AUTH_API = "https://divi-ai.onrender.com/api";
     const STORAGE_KEY = "diviAIConversations_v2";
-let activeStorageKey = null;
     const MAX_CHATS = 50;
 
     let conversations = [];
     let currentChatId = null;
+    let activeStorageKey = null;
+
     let sending = false;
     let recognition = null;
 
@@ -30,6 +31,7 @@ let activeStorageKey = null;
     const createId = () =>
         Date.now().toString(36) +
         Math.random().toString(36).slice(2, 9);
+
 
     /* ==========================================
        NOTIFICATIONS
@@ -55,6 +57,7 @@ let activeStorageKey = null;
             notice.hidden = true;
         }, 3500);
     }
+
 
     /* ==========================================
        HOMEPAGE NAVIGATION
@@ -98,6 +101,33 @@ let activeStorageKey = null;
         });
     }
 
+
+    function returnToHome() {
+        const home = $("#homePage");
+        const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
+
+        if (app) {
+            app.hidden = true;
+            app.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
+        }
+
+        if (home) {
+            home.hidden = false;
+            home.style.display = "";
+        }
+
+        document.body.classList.remove("chat-app");
+
+        showPage("homeHero");
+    }
+
+
     /* ==========================================
        AUTHENTICATION MESSAGES
     ========================================== */
@@ -111,11 +141,14 @@ let activeStorageKey = null;
 
         if (element) {
             element.textContent = message;
-            element.style.color = isError ? "#dc2626" : "#15803d";
+            element.style.color = isError
+                ? "#dc2626"
+                : "#15803d";
         } else if (message) {
             notify(message);
         }
     }
+
 
     function setAuthMode(mode) {
         const loginForm = $("#loginForm");
@@ -166,9 +199,15 @@ let activeStorageKey = null;
         const loginMessage = $("#loginMessage");
         const registerMessage = $("#registerMessage");
 
-        if (loginMessage) loginMessage.textContent = "";
-        if (registerMessage) registerMessage.textContent = "";
+        if (loginMessage) {
+            loginMessage.textContent = "";
+        }
+
+        if (registerMessage) {
+            registerMessage.textContent = "";
+        }
     }
+
 
     function openAuthScreen(mode = "login") {
         const home = $("#homePage");
@@ -198,6 +237,7 @@ let activeStorageKey = null;
         setAuthMode(mode);
     }
 
+
     function closeAuthScreen() {
         const authScreen = $("#authScreen");
         const home = $("#homePage");
@@ -216,6 +256,98 @@ let activeStorageKey = null;
 
         showPage("homeHero");
     }
+
+
+    /* ==========================================
+       ACCOUNT-SPECIFIC CHAT STORAGE
+    ========================================== */
+
+    function getUserStorageKey(username) {
+        if (!username) {
+            return null;
+        }
+
+        return (
+            STORAGE_KEY +
+            "_" +
+            encodeURIComponent(String(username).trim())
+        );
+    }
+
+
+    function clearCurrentChatData() {
+        conversations = [];
+        currentChatId = null;
+        activeStorageKey = null;
+
+        renderHistory();
+        renderMessages();
+    }
+
+
+    function loadChats() {
+        if (!authLoggedIn || !authUsername) {
+            clearCurrentChatData();
+            return;
+        }
+
+        const newStorageKey = getUserStorageKey(authUsername);
+
+        if (!newStorageKey) {
+            clearCurrentChatData();
+            return;
+        }
+
+        activeStorageKey = newStorageKey;
+
+        try {
+            const saved = localStorage.getItem(activeStorageKey);
+            const parsed = saved ? JSON.parse(saved) : [];
+
+            conversations = Array.isArray(parsed)
+                ? parsed.filter(chat =>
+                    chat &&
+                    typeof chat.id === "string" &&
+                    Array.isArray(chat.messages)
+                ).slice(0, MAX_CHATS)
+                : [];
+
+            currentChatId = conversations.length
+                ? conversations[0].id
+                : null;
+
+        } catch (error) {
+            console.error(
+                "Unable to load chat history:",
+                error
+            );
+
+            conversations = [];
+            currentChatId = null;
+        }
+    }
+
+
+    function saveChats() {
+        if (!authLoggedIn || !activeStorageKey) {
+            return;
+        }
+
+        try {
+            localStorage.setItem(
+                activeStorageKey,
+                JSON.stringify(conversations)
+            );
+        } catch (error) {
+            console.error(
+                "Unable to save chat history:",
+                error
+            );
+
+            notify("Could not save conversation history.");
+        }
+    }
+
 
     /* ==========================================
        AUTHENTICATION API
@@ -266,6 +398,7 @@ let activeStorageKey = null;
         return data;
     }
 
+
     async function checkAuthStatus(force = false) {
         if (!force && authStatusChecked) {
             return authLoggedIn;
@@ -296,19 +429,35 @@ let activeStorageKey = null;
 
                 const data = await response.json();
 
-                authLoggedIn = Boolean(
+                const loggedIn = Boolean(
                     data.logged_in ??
                     data.authenticated ??
                     data.is_logged_in ??
                     data.loggedIn
                 );
 
-                authUsername = data.username || "";
+                const username = loggedIn
+                    ? String(data.username || "")
+                    : "";
+
+                const accountChanged =
+                    username !== authUsername ||
+                    loggedIn !== authLoggedIn;
+
+                authLoggedIn = loggedIn;
+                authUsername = username;
                 authStatusChecked = true;
+
+                if (accountChanged || !authLoggedIn) {
+                    loadChats();
+                    renderHistory();
+                    renderMessages();
+                }
 
                 updateAuthUI();
 
                 return authLoggedIn;
+
             } catch (error) {
                 console.error(
                     "Could not check login status:",
@@ -319,7 +468,11 @@ let activeStorageKey = null;
                 authUsername = "";
                 authStatusChecked = false;
 
+                clearCurrentChatData();
+                updateAuthUI();
+
                 return false;
+
             } finally {
                 authStatusPromise = null;
             }
@@ -327,6 +480,7 @@ let activeStorageKey = null;
 
         return authStatusPromise;
     }
+
 
     function updateAuthUI() {
         $$("[data-auth-username]").forEach(element => {
@@ -347,6 +501,7 @@ let activeStorageKey = null;
             logoutButton.hidden = !authLoggedIn;
         }
     }
+
 
     /* ==========================================
        LOGIN AND REGISTRATION
@@ -427,6 +582,8 @@ let activeStorageKey = null;
                     authStatusChecked = true;
                     authStatusPromise = null;
 
+                    // Load the correct account's chat history.
+                    loadChats();
                     updateAuthUI();
 
                     loginForm.reset();
@@ -434,12 +591,14 @@ let activeStorageKey = null;
                     notify("Login successful!");
 
                     await openDiviAI();
+
                 } catch (error) {
                     authMessage(
                         "loginForm",
                         error.message || "Login failed.",
                         true
                     );
+
                 } finally {
                     if (submitButton) {
                         submitButton.disabled = false;
@@ -509,11 +668,6 @@ let activeStorageKey = null;
 
                     registerForm.reset();
 
-                    authLoggedIn = false;
-                    authUsername = "";
-                    authStatusChecked = false;
-                    authStatusPromise = null;
-
                     setAuthMode("login");
 
                     const loginIdentifier = $("#loginIdentifier");
@@ -529,12 +683,14 @@ let activeStorageKey = null;
                     );
 
                     notify("Account created. Please log in.");
+
                 } catch (error) {
                     authMessage(
                         "registerForm",
                         error.message || "Registration failed.",
                         true
                     );
+
                 } finally {
                     if (submitButton) {
                         submitButton.disabled = false;
@@ -555,11 +711,13 @@ let activeStorageKey = null;
                     authStatusChecked = true;
                     authStatusPromise = null;
 
+                    clearCurrentChatData();
                     updateAuthUI();
 
                     notify("You have logged out.");
 
                     openAuthScreen("login");
+
                 } catch (error) {
                     notify("Logout failed: " + error.message);
                 }
@@ -569,63 +727,65 @@ let activeStorageKey = null;
         checkAuthStatus();
     }
 
+
     /* ==========================================
        OPEN CHAT APPLICATION
     ========================================== */
 
-    
-```javascript
-async function openDiviAI() {
-    const home = $("#homePage");
-    const app = $("#aiAppScreen");
-    const authScreen = $("#authScreen");
+    async function openDiviAI() {
+        const home = $("#homePage");
+        const app = $("#aiAppScreen");
+        const authScreen = $("#authScreen");
 
-    if (!app) {
-        notify("Chat screen not found. Check your index.html.");
-        return;
-    }
+        if (!app) {
+            notify("Chat screen not found. Check your index.html.");
+            return;
+        }
 
-    // Check the server session before opening the chat.
-    if (authScreen) {
+        // Confirm the active session with the backend.
         const loggedIn = await checkAuthStatus(true);
 
-        if (!loggedIn) {
+        if (!loggedIn || !authUsername) {
+            clearCurrentChatData();
             openAuthScreen("login");
             return;
         }
+
+        // Load only this user's saved conversations.
+        loadChats();
+
+        if (home) {
+            home.hidden = true;
+            home.style.display = "none";
+        }
+
+        if (authScreen) {
+            authScreen.hidden = true;
+            authScreen.style.display = "none";
+        }
+
+        app.hidden = false;
+        app.style.display = "flex";
+
+        document.body.classList.add("chat-app");
+
+        if (!currentChatId || !getChat(currentChatId)) {
+            createNewChat();
+        } else {
+            renderMessages();
+            renderHistory();
+        }
+
+        closeSidebar();
+
+        const input = $("#userInput");
+
+        if (input) {
+            setTimeout(() => input.focus(), 100);
+        }
     }
 
-    if (home) {
-        home.hidden = true;
-        home.style.display = "none";
-    }
 
-    if (authScreen) {
-        authScreen.hidden = true;
-        authScreen.style.display = "none";
-    }
-
-    app.hidden = false;
-    app.style.display = "flex";
-
-    document.body.classList.add("chat-app");
-
-    if (!currentChatId || !getChat(currentChatId)) {
-        createNewChat();
-    } else {
-        renderMessages();
-        renderHistory();
-    }
-
-    closeSidebar();
-
-    const input = $("#userInput");
-
-    if (input) {
-        setTimeout(() => input.focus(), 100);
-    }
-}
-```
     /* ==========================================
        HOMEPAGE BUTTONS
     ========================================== */
@@ -668,53 +828,22 @@ async function openDiviAI() {
         }
     }
 
+
     /* ==========================================
-       CONVERSATION STORAGE
+       CHAT MANAGEMENT
     ========================================== */
-
-    function loadChats() {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            const parsed = saved ? JSON.parse(saved) : [];
-
-            conversations = Array.isArray(parsed)
-                ? parsed.filter(chat =>
-                    chat &&
-                    typeof chat.id === "string" &&
-                    Array.isArray(chat.messages)
-                ).slice(0, MAX_CHATS)
-                : [];
-        } catch (error) {
-            console.error(
-                "Unable to load chat history:",
-                error
-            );
-
-            conversations = [];
-        }
-    }
-
-    function saveChats() {
-        try {
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(conversations)
-            );
-        } catch (error) {
-            console.error(
-                "Unable to save chat history:",
-                error
-            );
-
-            notify("Could not save conversation history.");
-        }
-    }
 
     function getChat(id) {
         return conversations.find(chat => chat.id === id) || null;
     }
 
+
     function createNewChat() {
+        if (!authLoggedIn || !activeStorageKey) {
+            notify("Please log in before creating a chat.");
+            return;
+        }
+
         const chat = {
             id: createId(),
             title: "New chat",
@@ -742,6 +871,7 @@ async function openDiviAI() {
         }
     }
 
+
     function deleteChat(id) {
         conversations = conversations.filter(
             chat => chat.id !== id
@@ -753,16 +883,17 @@ async function openDiviAI() {
                 : null;
         }
 
+        saveChats();
+
         if (!currentChatId) {
-            saveChats();
             createNewChat();
             return;
         }
 
-        saveChats();
         renderHistory();
         renderMessages();
     }
+
 
     function clearHistory() {
         if (!conversations.length) {
@@ -783,8 +914,11 @@ async function openDiviAI() {
         notify("Conversation history cleared.");
     }
 
+
     function selectChat(id) {
-        if (!getChat(id)) return;
+        if (!getChat(id)) {
+            return;
+        }
 
         currentChatId = id;
 
@@ -793,6 +927,7 @@ async function openDiviAI() {
         closeSidebar();
     }
 
+
     /* ==========================================
        RENDER CHAT HISTORY
     ========================================== */
@@ -800,9 +935,21 @@ async function openDiviAI() {
     function renderHistory() {
         const container = $("#chatHistory");
 
-        if (!container) return;
+        if (!container) {
+            return;
+        }
 
         container.replaceChildren();
+
+        if (!authLoggedIn) {
+            const empty = document.createElement("p");
+
+            empty.className = "no-history";
+            empty.textContent = "Log in to view your conversations.";
+
+            container.appendChild(empty);
+            return;
+        }
 
         if (!conversations.length) {
             const empty = document.createElement("p");
@@ -867,6 +1014,7 @@ async function openDiviAI() {
         });
     }
 
+
     /* ==========================================
        RENDER MESSAGES
     ========================================== */
@@ -875,7 +1023,9 @@ async function openDiviAI() {
         const box = $("#chatBox");
         const welcome = $("#welcomeScreen");
 
-        if (!box) return;
+        if (!box) {
+            return;
+        }
 
         const chat = getChat(currentChatId);
         const messages = chat ? chat.messages : [];
@@ -895,10 +1045,13 @@ async function openDiviAI() {
         box.scrollTop = box.scrollHeight;
     }
 
+
     function addMessageToScreen(message, scroll = true) {
         const box = $("#chatBox");
 
-        if (!box) return;
+        if (!box) {
+            return;
+        }
 
         const welcome = $("#welcomeScreen");
 
@@ -935,7 +1088,13 @@ async function openDiviAI() {
         return row;
     }
 
+
     function addMessage(role, content) {
+        if (!authLoggedIn || !activeStorageKey) {
+            notify("Please log in to use Divi AI.");
+            return null;
+        }
+
         let chat = getChat(currentChatId);
 
         if (!chat) {
@@ -943,7 +1102,9 @@ async function openDiviAI() {
             chat = getChat(currentChatId);
         }
 
-        if (!chat) return null;
+        if (!chat) {
+            return null;
+        }
 
         const message = {
             id: createId(),
@@ -968,10 +1129,13 @@ async function openDiviAI() {
         return message;
     }
 
+
     function showLoading() {
         const box = $("#chatBox");
 
-        if (!box) return null;
+        if (!box) {
+            return null;
+        }
 
         const row = document.createElement("div");
 
@@ -1016,6 +1180,7 @@ async function openDiviAI() {
 
         return row;
     }
+
 
     /* ==========================================
        SEND MESSAGE TO BACKEND
@@ -1093,10 +1258,19 @@ async function openDiviAI() {
         );
     }
 
+
     async function sendMessage(text) {
         const question = String(text || "").trim();
 
-        if (!question || sending) return;
+        if (!question || sending) {
+            return;
+        }
+
+        if (!authLoggedIn || !activeStorageKey) {
+            notify("Please log in before sending a message.");
+            openAuthScreen("login");
+            return;
+        }
 
         if (!getChat(currentChatId)) {
             createNewChat();
@@ -1130,6 +1304,7 @@ async function openDiviAI() {
 
             addMessage("assistant", result.answer);
             renderSources(result.sources);
+
         } catch (error) {
             console.error("Divi AI error:", error);
 
@@ -1144,6 +1319,7 @@ async function openDiviAI() {
                 "\n\nPlease check that the backend endpoint " +
                 "/api/web-search is working and its API key is configured."
             );
+
         } finally {
             sending = false;
 
@@ -1156,6 +1332,7 @@ async function openDiviAI() {
             }
         }
     }
+
 
     /* ==========================================
        SEARCH SOURCES
@@ -1180,7 +1357,9 @@ async function openDiviAI() {
         sources.slice(0, 6).forEach(source => {
             const url = source && source.url;
 
-            if (typeof url !== "string") return;
+            if (typeof url !== "string") {
+                return;
+            }
 
             try {
                 const parsed = new URL(url);
@@ -1199,6 +1378,7 @@ async function openDiviAI() {
                     source.title || parsed.hostname;
 
                 section.appendChild(link);
+
             } catch {
                 // Ignore invalid source URLs.
             }
@@ -1209,6 +1389,7 @@ async function openDiviAI() {
             box.scrollTop = box.scrollHeight;
         }
     }
+
 
     /* ==========================================
        CHAT FORM
@@ -1259,6 +1440,7 @@ async function openDiviAI() {
             });
         });
     }
+
 
     /* ==========================================
        CHAT CONTROL BUTTONS
@@ -1323,6 +1505,7 @@ async function openDiviAI() {
         });
     }
 
+
     function closeSidebar() {
         const sidebar = $("#sidebar");
         const toggle = $("#sidebarToggle");
@@ -1336,6 +1519,7 @@ async function openDiviAI() {
         }
     }
 
+
     /* ==========================================
        VOICE INPUT
     ========================================== */
@@ -1343,7 +1527,9 @@ async function openDiviAI() {
     function setupVoice() {
         const button = $("#voiceButton");
 
-        if (!button) return;
+        if (!button) {
+            return;
+        }
 
         const SpeechRecognition =
             window.SpeechRecognition ||
@@ -1404,12 +1590,14 @@ async function openDiviAI() {
         });
     }
 
+
     /* ==========================================
        INITIALIZATION
     ========================================== */
 
     function init() {
-        loadChats();
+        // Do not load shared chat history before authentication.
+        clearCurrentChatData();
 
         setupNavigation();
         setupChat();
@@ -1444,10 +1632,6 @@ async function openDiviAI() {
             year.textContent = new Date().getFullYear();
         }
 
-        if (conversations.length) {
-            currentChatId = conversations[0].id;
-        }
-
         renderHistory();
         renderMessages();
         showPage("homeHero");
@@ -1456,6 +1640,7 @@ async function openDiviAI() {
             "Divi AI loaded: chat, navigation, voice, and authentication initialized."
         );
     }
+
 
     if (document.readyState === "loading") {
         document.addEventListener(
@@ -1466,4 +1651,5 @@ async function openDiviAI() {
     } else {
         init();
     }
+
 })();
