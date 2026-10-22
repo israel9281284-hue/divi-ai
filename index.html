@@ -44,12 +44,25 @@
                 <button class="nav-tab" data-page="homeContact">Contact</button>
             </nav>
 
-            <button class="open-ai-button"
-                    type="button"
-                    onclick="openDiviAI()">
-                Open Divi AI <span>→</span>
-            </button>
+          <div class="home-auth-buttons">
+    <button class="login-button"
+            type="button"
+            data-auth-open="login">
+        Login
+    </button>
 
+    <button class="signup-button"
+            type="button"
+            data-auth-open="register">
+        Sign Up
+    </button>
+
+    <button class="open-ai-button"
+            type="button"
+            onclick="openDiviAI()">
+        Open Divi AI <span>→</span>
+    </button>
+</div>
         </header>
 
 
@@ -415,7 +428,7 @@
             </div>
 
             <p class="copyright">
-                © <span id="copyrightYear"></span> Divi AI.
+                © <span id="copyrightyear"></span> Divi AI.
             </p>
 
         </footer>
@@ -630,7 +643,129 @@
 
     </div>
 
+<!-- =========================================
+     DIVI AI LOGIN AND REGISTRATION
+========================================== -->
 
+<div id="authScreen" class="auth-screen" hidden>
+
+    <div class="auth-card">
+
+        <button type="button"
+                class="auth-back-button"
+                data-auth-close>
+            ← Back
+        </button>
+
+        <div class="auth-logo">D</div>
+
+        <h1 id="authTitle">Welcome back</h1>
+
+        <p id="authDescription">
+            Log in to your Divi AI account.
+        </p>
+
+        <!-- LOGIN FORM -->
+
+        <form id="loginForm">
+
+            <label for="loginIdentifier">
+                Username or email
+            </label>
+
+            <input
+                id="loginIdentifier"
+                name="identifier"
+                type="text"
+                autocomplete="username"
+                placeholder="Enter your username or email"
+                required>
+
+            <label for="loginPassword">
+                Password
+            </label>
+
+            <input
+                id="loginPassword"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Enter your password"
+                required>
+
+            <button type="submit" class="auth-submit-button">
+                Login
+            </button>
+
+            <p id="loginMessage" class="auth-message"
+               role="status"></p>
+
+        </form>
+
+        <!-- REGISTRATION FORM -->
+
+        <form id="registerForm" hidden>
+
+            <label for="registerUsername">
+                Username
+            </label>
+
+            <input
+                id="registerUsername"
+                name="username"
+                type="text"
+                autocomplete="username"
+                minlength="3"
+                placeholder="Choose a username"
+                required>
+
+            <label for="registerEmail">
+                Email
+            </label>
+
+            <input
+                id="registerEmail"
+                name="email"
+                type="email"
+                autocomplete="email"
+                placeholder="Enter your email"
+                required>
+
+            <label for="registerPassword">
+                Password
+            </label>
+
+            <input
+                id="registerPassword"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                placeholder="Create a password"
+                required>
+
+            <button type="submit" class="auth-submit-button">
+                Create Account
+            </button>
+
+            <p id="registerMessage" class="auth-message"
+               role="status"></p>
+
+        </form>
+
+        <p class="auth-switch">
+            <span id="authSwitchText">New to Divi AI?</span>
+
+            <button type="button"
+                    id="authSwitchButton"
+                    data-auth-open="register">
+                Create an account
+            </button>
+        </p>
+
+    </div>
+
+</div>
     <!-- =========================================
          PAGE NAVIGATION SCRIPT
     ========================================== -->
