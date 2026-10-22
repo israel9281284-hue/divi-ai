@@ -8,6 +8,7 @@
     const API_URL = "https://divi-ai.onrender.com/api/web-search";
     const AUTH_API = "https://divi-ai.onrender.com/api";
     const STORAGE_KEY = "diviAIConversations_v2";
+let activeStorageKey = null;
     const MAX_CHATS = 50;
 
     let conversations = [];
