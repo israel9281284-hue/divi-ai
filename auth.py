@@ -1,4 +1,3 @@
-```python
 import os
 import sqlite3
 
@@ -6,7 +5,7 @@ from flask import session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# Store the database alongside this Python file.
+# Store the database alongside this Python file[cite: 3].
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "users.db")
 
@@ -17,14 +16,16 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
+                email TEXT,
                 password TEXT NOT NULL
             )
         """)
         conn.commit()
 
 
-def create_user(username, password):
+def create_user(username, password, email=""):
     username = username.strip()
+    email = email.strip() if email else ""
 
     if not username or not password:
         return False
@@ -34,8 +35,8 @@ def create_user(username, password):
 
         with sqlite3.connect(DATABASE) as conn:
             conn.execute(
-                "INSERT INTO users (username, password) VALUES (?, ?)",
-                (username, hashed_password)
+                "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                (username, email, hashed_password)
             )
             conn.commit()
 
@@ -72,4 +73,3 @@ def is_logged_in():
 
 def current_username():
     return session.get("username")
-```
