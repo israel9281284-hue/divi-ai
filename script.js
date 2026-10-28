@@ -380,12 +380,13 @@
                 event.preventDefault();
 
                 const username = $("#registerUsername")?.value.trim();
+                const email = $("#registerEmail")?.value.trim();
                 const password = $("#registerPassword")?.value;
 
-                if (!username || !password) {
+                if (!username || !email || !password) {
                     authMessage(
                         "registerForm",
-                        "Enter a username and password.",
+                        "Enter a username, email, and password.",
                         true
                     );
                     return;
@@ -418,6 +419,7 @@
                 try {
                     const data = await authRequest("/register", {
                         username,
+                        email,
                         password
                     });
 
